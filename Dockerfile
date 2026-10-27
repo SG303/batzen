@@ -1,4 +1,4 @@
-FROM node:22-slim AS build
+FROM node:26-slim AS build
 # better-sqlite3 compiles its native module when no prebuilt binary matches
 RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
@@ -7,7 +7,7 @@ RUN npm ci
 COPY . .
 RUN npm run build && npm prune --omit=dev
 
-FROM node:22-slim
+FROM node:26-slim
 WORKDIR /app
 # BODY_SIZE_LIMIT leaves room for large JSON exports on restore (default 512K)
 ENV NODE_ENV=production \
