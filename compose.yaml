@@ -1,0 +1,15 @@
+services:
+  batzen:
+    build: .
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    volumes:
+      - batzen-data:/data
+      # Nightly backups. Set BACKUP_PATH in .env to a folder on another device (e.g. a NAS
+      # mount like /mnt/nas/batzen); without it they go to the volume "batzen-backups".
+      - ${BACKUP_PATH:-batzen-backups}:/backups
+
+volumes:
+  batzen-data:
+  batzen-backups:
