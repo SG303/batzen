@@ -7,7 +7,7 @@ Batzen stays a tool for the big picture: no transactions, no bank connections, n
 - [x] Nightly database backups, keep 30 days, stored on a second device (NAS or Proxmox Backup)
 - [x] Restore from the JSON export under Settings
 - [x] Unit tests for `src/lib/domain.ts`
-- [x] Private GitHub repository
+- [x] Public GitHub repository with CI, a Docker image on GHCR and automatic dependency updates (Dependabot)
 
 ## Phase 1: Assets
 

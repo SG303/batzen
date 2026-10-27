@@ -1,0 +1,6 @@
+# Builds the image from the local checkout instead of pulling it:
+#   docker compose -f compose.yaml -f compose.build.yaml up -d --build
+services:
+  batzen:
+    build: .
+    image: batzen:local

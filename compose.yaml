@@ -1,13 +1,16 @@
 services:
   batzen:
-    build: .
+    # Built on every change to main by GitHub Actions. Pin a version in .env to roll back,
+    # e.g. BATZEN_TAG=sha-1a2b3c4 (the tags are listed on the package page on GitHub).
+    image: ghcr.io/sg303/batzen:${BATZEN_TAG:-latest}
     restart: unless-stopped
     ports:
       - '3000:3000'
     volumes:
       - batzen-data:/data
-      # Nightly backups. Set BACKUP_PATH in .env to a folder on another device (e.g. a NAS
-      # mount like /mnt/nas/batzen); without it they go to the volume "batzen-backups".
+      # Nightly backups and the copies taken before an update changes the database. Set
+      # BACKUP_PATH in .env to a folder on another device (e.g. a NAS mount like
+      # /mnt/nas/batzen); without it they go to the volume "batzen-backups".
       - ${BACKUP_PATH:-batzen-backups}:/backups
 
 volumes:

@@ -1,0 +1,34 @@
+# Weekly updates, grouped into one pull request per ecosystem. CI merges them automatically
+# once the tests and the image pass, except major versions (see .github/workflows/ci.yml).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: sunday
+      time: '22:00'
+      timezone: Europe/Zurich
+    groups:
+      npm:
+        update-types: [minor, patch]
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: sunday
+      time: '22:00'
+      timezone: Europe/Zurich
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: sunday
+      time: '22:00'
+      timezone: Europe/Zurich
+    groups:
+      actions:
+        update-types: [minor, patch]

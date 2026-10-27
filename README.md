@@ -42,9 +42,15 @@ npx drizzle-kit generate --name <change>
 
 ## Deployment
 
+Every change to `main` is tested and published as a Docker image to `ghcr.io/sg303/batzen` (tags `latest` and `sha-<commit>`). Copy [`compose.yaml`](compose.yaml) to the server and run:
+
 ```sh
-docker compose up -d --build   # serves on port 3000, data in the volume "batzen-data"
+docker compose pull && docker compose up -d   # serves on port 3000, data in the volume "batzen-data"
 ```
+
+To update, run the same command again (or let a tool such as a nightly cron job do it). To go back to an earlier version, put e.g. `BATZEN_TAG=sha-1a2b3c4` into a file `.env` next to `compose.yaml` and run `docker compose up -d`; remove the line to follow `latest` again. Before an update changes the database, the app writes a copy to `/backups/batzen-before-update-<date>T<time>.db` and keeps the newest 5 (see [Restore](#restore)).
+
+To build the image from a checkout instead: `docker compose -f compose.yaml -f compose.build.yaml up -d --build`.
 
 On first start the app asks you to create an account. The login keeps other people in your network out; it is not meant for the open internet. Run the app only inside a private network (e.g. Tailscale).
 
@@ -54,6 +60,11 @@ Forgot your password? This sets a new random one and prints it:
 docker compose exec batzen node scripts/reset-password.js <username>
 # without Docker: node scripts/reset-password.js <username>
 ```
+
+## Automation
+
+- **CI** (`.github/workflows/ci.yml`): every push and pull request runs the type check and the tests, builds the image and starts it once (it must turn healthy and serve the setup page). On `main` the image is published. A weekly rebuild on Monday night picks up security fixes in the Node base image.
+- **Dependabot** (`.github/dependabot.yml`): checks npm packages, the base image and the GitHub Actions every Sunday evening. Minor and patch updates are merged automatically once CI passes, which publishes a new image. Major updates stay open as pull requests and need a manual look.
 
 ## Backups
 
@@ -78,3 +89,5 @@ docker compose stop batzen
 docker compose run --rm --no-deps batzen sh -c 'cp /backups/batzen-2026-10-27.db /data/batzen.db && rm -f /data/batzen.db-wal /data/batzen.db-shm'
 docker compose start batzen
 ```
+
+**After an update that went wrong**: pin the previous image first (`BATZEN_TAG=sha-…` in `.env`, see [Deployment](#deployment)), otherwise the new version migrates the database again on start. Then restore the copy from before the update with the commands above, using `batzen-before-update-….db` instead of the nightly file.

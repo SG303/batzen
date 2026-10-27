@@ -26,4 +26,7 @@ RUN mkdir /data /backups && chown node:node /data /backups
 USER node
 VOLUME ["/data", "/backups"]
 EXPOSE 3000
+# Any answer below 500 means the server and the database respond (the root redirects to the login)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+	CMD ["node", "-e", "fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/', { redirect: 'manual' }).then((r) => process.exit(r.status < 500 ? 0 : 1), () => process.exit(1))"]
 CMD ["node", "build"]
