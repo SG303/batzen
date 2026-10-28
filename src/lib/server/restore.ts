@@ -27,7 +27,7 @@ const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 /**
  * Validates a parsed JSON export (see routes/(app)/export) and returns it as budget data.
  * Older exports without `counted`, snapshots, assets, `assetId` or `reserve` on items, `dueMonth` on
- * item versions, goals or scenarios are accepted.
+ * item versions, `note` on item versions (earlier exports had an unused `note` on items, which is ignored), goals or scenarios are accepted.
  */
 export function parseExport(raw: unknown): BudgetData {
 	if (!isObj(raw) || !['categories', 'items', 'incomes', 'checkIns'].every((k) => Array.isArray(raw[k]))) {
@@ -79,6 +79,8 @@ export function parseExport(raw: unknown): BudgetData {
 			share: int(v.share, `${vat}.share`, 0, 100),
 			// Exports from before due dates have no `dueMonth`
 			dueMonth: v.dueMonth == null ? null : int(v.dueMonth, `${vat}.dueMonth`, 1, 12),
+			// Exports from before item notes have no `note` on versions
+			note: optionalStr(v.note, `${vat}.note`),
 			ended: bool(v.ended, `${vat}.ended`)
 		}));
 		unique(versions.map((v) => v.from), `${at}.versions`);
@@ -87,7 +89,6 @@ export function parseExport(raw: unknown): BudgetData {
 			name: str(i.name, `${at}.name`),
 			categoryId,
 			kind: oneOf(i.kind, KINDS.map((k) => k.value), `${at}.kind`),
-			note: optionalStr(i.note, `${at}.note`),
 			assetId,
 			// Exports from before reserves count every item that is not monthly
 			reserve: i.reserve === undefined ? true : bool(i.reserve, `${at}.reserve`),

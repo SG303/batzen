@@ -16,7 +16,6 @@ export const items = sqliteTable('items', {
 		.references(() => categories.id),
 	/** 'fixed' | 'variable' | 'saving' */
 	kind: text('kind').notNull().default('fixed'),
-	note: text('note'),
 	/** Saving items only: the asset the money goes into */
 	assetId: integer('asset_id').references((): AnySQLiteColumn => assets.id, { onDelete: 'set null' }),
 	/** Counts towards the monthly reserve; only applies while the interval is not monthly */
@@ -43,6 +42,8 @@ export const itemVersions = sqliteTable(
 		share: integer('share').notNull().default(100),
 		/** Month of the year (1–12) of a payment, the others follow the interval. Optional, never for monthly */
 		dueMonth: integer('due_month'),
+		/** Free text that applies from this month, e.g. the provider or what the bundle includes */
+		note: text('note'),
 		ended: integer('ended', { mode: 'boolean' }).notNull().default(false)
 	},
 	(t) => [uniqueIndex('item_versions_item_from').on(t.itemId, t.from)]

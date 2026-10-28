@@ -120,7 +120,7 @@
 
 	{#if !item}
 		<div class="border-t border-rule pt-4">
-			<AmountFields variant="item" idPrefix="new" oninterval={(i) => (newInterval = i)} />
+			<AmountFields variant="item" idPrefix="new" notes oninterval={(i) => (newInterval = i)} />
 		</div>
 		<MonthField name="from" id="item-from" label="Seit wann" bind:value={from} />
 	{/if}

@@ -57,14 +57,64 @@ describe('applyCheckIn', () => {
 		resetAll();
 		ensureCategories();
 		const categoryId = loadData().categories[0].id;
-		const id = saveItem({ name: 'Steuern', categoryId, kind: 'fixed', note: null });
-		upsertItemVersion(id, { from: '2026-01', amount: 1_200_000, interval: 'yearly', share: 100, dueMonth: 9, ended: false });
+		const id = saveItem({ name: 'Steuern', categoryId, kind: 'fixed' });
+		upsertItemVersion(id, { from: '2026-01', amount: 1_200_000, interval: 'yearly', share: 100, dueMonth: 9, note: null, ended: false });
 		applyCheckIn('2027-01', [{ target: 'item', id, action: 'update', amount: 1_250_000, interval: 'yearly', share: 100, dueMonth: 10 }], null);
 		applyCheckIn('2028-01', [{ target: 'item', id, action: 'end' }], null);
 		expect(loadData().items[0].versions.map((v) => [v.from, v.dueMonth])).toEqual([
 			['2026-01', 9],
 			['2027-01', 10],
 			['2028-01', null]
+		]);
+	});
+});
+
+describe('applyCheckIn and item notes', () => {
+	function setup() {
+		resetAll();
+		ensureCategories();
+		const categoryId = loadData().categories[0].id;
+		const id = saveItem({ name: 'Handyabo', categoryId, kind: 'fixed' });
+		upsertItemVersion(id, { from: '2025-01', amount: 4_000, interval: 'monthly', share: 100, dueMonth: null, note: 'Anbieter X', ended: false });
+		return id;
+	}
+	const update = (id: number, amount: number) =>
+		({ target: 'item', id, action: 'update', amount, interval: 'monthly', share: 100, dueMonth: null }) as const;
+	const notes = () => loadData().items[0].versions.map((v) => [v.from, v.amount, v.note]);
+
+	it('lets a new version inherit the note in effect', () => {
+		const id = setup();
+		applyCheckIn('2026-01', [update(id, 3_500)], null);
+		expect(notes()).toEqual([
+			['2025-01', 4_000, 'Anbieter X'],
+			['2026-01', 3_500, 'Anbieter X']
+		]);
+	});
+
+	it('keeps the note of a version that already exists for the check-in month', () => {
+		const id = setup();
+		upsertItemVersion(id, { from: '2026-01', amount: 3_000, interval: 'monthly', share: 100, dueMonth: null, note: 'Anbieter Y', ended: false });
+		applyCheckIn('2026-01', [update(id, 3_200)], null);
+		expect(notes()).toEqual([
+			['2025-01', 4_000, 'Anbieter X'],
+			['2026-01', 3_200, 'Anbieter Y']
+		]);
+	});
+
+	it('inherits from the version before the check-in month, not from a later one', () => {
+		const id = setup();
+		upsertItemVersion(id, { from: '2027-01', amount: 3_000, interval: 'monthly', share: 100, dueMonth: null, note: 'Anbieter Y', ended: false });
+		applyCheckIn('2026-01', [update(id, 3_500)], null);
+		expect(notes().map((n) => n[2])).toEqual(['Anbieter X', 'Anbieter X', 'Anbieter Y']);
+	});
+
+	it('clears the note when the item is cancelled, also when the month already has a version', () => {
+		const id = setup();
+		upsertItemVersion(id, { from: '2026-01', amount: 3_000, interval: 'monthly', share: 100, dueMonth: null, note: 'Anbieter Y', ended: false });
+		applyCheckIn('2026-01', [{ target: 'item', id, action: 'end' }], null);
+		expect(notes()).toEqual([
+			['2025-01', 4_000, 'Anbieter X'],
+			['2026-01', 0, null]
 		]);
 	});
 });

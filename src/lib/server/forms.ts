@@ -2,6 +2,7 @@ import {
 	ASSET_TYPES,
 	INCOME_TYPES,
 	INTERVALS,
+	ITEM_NOTE_MAX,
 	KINDS,
 	type AssetType,
 	type IncomeType,
@@ -53,6 +54,11 @@ export function interval(form: FormData): Interval {
 /** Optional month of the year (1–12) a bill is due; null if not given or the interval is monthly. */
 export function dueMonth(form: FormData, interval: Interval): number | null {
 	return normalizeDueMonth(interval, form.get('dueMonth'));
+}
+
+/** Optional note of an item version, e.g. the provider or what the bundle includes. */
+export function itemNote(form: FormData): string | null {
+	return optionalText(form, 'note', ITEM_NOTE_MAX);
 }
 
 /** Whether an item counts towards the reserve; posted as '1' or '0', counts when missing. */

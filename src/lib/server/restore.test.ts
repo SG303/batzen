@@ -80,6 +80,24 @@ describe('restore', () => {
 		expect(data.items.every((i) => i.reserve && i.versions.every((v) => v.dueMonth === null))).toBe(true);
 	});
 
+	it('accepts older exports without item notes', () => {
+		// The round trip above covers notes only if the sample has some
+		expect(loadData().items.some((i) => i.versions.some((v) => v.note))).toBe(true);
+		const raw: any = exported();
+		for (const i of raw.items) for (const v of i.versions) delete v.note;
+		const data = parseExport(raw);
+		expect(data.items.every((i) => i.versions.every((v) => v.note === null))).toBe(true);
+	});
+
+	it('ignores the unused note that earlier exports had on items', () => {
+		const raw: any = exported();
+		for (const i of raw.items) i.note = 'alt';
+		const data = parseExport(raw);
+		expect(data.items.every((i) => !('note' in i))).toBe(true);
+		restoreData(data);
+		expect(loadData()).toEqual(data);
+	});
+
 	it('accepts older exports without goals and scenarios', () => {
 		const raw: any = exported();
 		delete raw.goals;
@@ -125,6 +143,7 @@ describe('parseExport', () => {
 			['items[0].versions[0].amount', (r) => (r.items[0].versions[0].amount = 12.5)],
 			['items[0].versions[0].amount', (r) => (r.items[0].versions[0].amount = '100')],
 			['items[0].versions[0].dueMonth', (r) => (r.items[0].versions[0].dueMonth = 13)],
+			['items[0].versions[0].note', (r) => (r.items[0].versions[0].note = 5)],
 			['items[0].reserve', (r) => (r.items[0].reserve = 'ja')],
 			['items[0].versions[0].share', (r) => (r.items[0].versions[0].share = 101)],
 			['items[0].versions[0].interval', (r) => (r.items[0].versions[0].interval = 'weekly')],
