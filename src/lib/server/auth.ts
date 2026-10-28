@@ -76,6 +76,12 @@ export function hasUsers(): boolean {
 	return !!db.select({ id: users.id }).from(users).limit(1).get();
 }
 
+/** Month ('YYYY-MM') the first account was created, i.e. when the budget was taken into use; null without users. */
+export function firstUserMonth(): string | null {
+	const row = db.select({ createdAt: users.createdAt }).from(users).orderBy(asc(users.createdAt)).limit(1).get();
+	return row ? row.createdAt.slice(0, 7) : null;
+}
+
 export function listUsers() {
 	return db
 		.select({ id: users.id, username: users.username, createdAt: users.createdAt, lastLoginAt: users.lastLoginAt })

@@ -976,14 +976,20 @@ describe('goals', () => {
 describe('check-in reminder', () => {
 	const checkIn = (id: number, asOf: string): CheckIn => ({ id, asOf, completedAt: '', note: null, snapshot: null });
 
-	it('is due without any check-in', () => {
+	it('waits six months after the start of use without any check-in', () => {
+		expect(checkInReminder([], '2026-10', '2026-10')).toEqual({ last: null, monthsAgo: null, due: false });
+		expect(checkInReminder([], '2027-03', '2026-10').due).toBe(false);
+		expect(checkInReminder([], '2027-04', '2026-10').due).toBe(true);
+	});
+
+	it('is due without any check-in when the start is unknown', () => {
 		expect(checkInReminder([], '2026-10')).toEqual({ last: null, monthsAgo: null, due: true });
 	});
 
-	it('is due five months after the latest check-in, also when older months were backfilled later', () => {
-		const list = [checkIn(1, '2026-05'), checkIn(2, '2023-01')];
-		expect(checkInReminder(list, '2026-09')).toMatchObject({ monthsAgo: 4, due: false });
-		expect(checkInReminder(list, '2026-10')).toMatchObject({ last: { id: 1 }, monthsAgo: 5, due: true });
+	it('is due six months after the latest check-in, also when older months were backfilled later', () => {
+		const list = [checkIn(1, '2026-04'), checkIn(2, '2023-01')];
+		expect(checkInReminder(list, '2026-09', '2020-01')).toMatchObject({ monthsAgo: 5, due: false });
+		expect(checkInReminder(list, '2026-10', '2020-01')).toMatchObject({ last: { id: 1 }, monthsAgo: 6, due: true });
 	});
 
 	it('describes how long ago it was', () => {

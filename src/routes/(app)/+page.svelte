@@ -129,7 +129,7 @@
 	);
 	const catOf = (id: number) => budget.categories.find((c) => c.id === id);
 
-	const reminder = $derived(checkInReminder(budget.checkIns, today));
+	const reminder = $derived(checkInReminder(budget.checkIns, today, data.startedMonth));
 
 	const verdict = $derived(prev ? incomeVerdict(prev, s) : null);
 
