@@ -2,6 +2,8 @@ name: CI
 
 # Tests every change, builds the Docker image and starts it once. Changes to main publish the
 # image to ghcr.io/sg303/batzen. A weekly rebuild picks up security fixes in the base image.
+# A new version in package.json (see "Versioning" in the README) also tags the image with the
+# version and creates the GitHub release v<version> from CHANGELOG.md.
 on:
   push:
     branches: [main]
@@ -49,6 +51,7 @@ jobs:
           context: .
           load: true
           tags: batzen:ci
+          build-args: COMMIT=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Start the image and wait until it is healthy
@@ -64,15 +67,28 @@ jobs:
           # A fresh database shows the setup page
           curl -fsS -o /dev/null http://localhost:3000/einrichten
 
+      - name: Check for a new release
+        id: release
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: |
+          version=$(node -p "require('./package.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          # A version is released once: its tag exists from then on and the image tag is not moved again
+          if [ -z "$(git ls-remote --tags origin "refs/tags/v$version")" ]; then
+            echo "new=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "new=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Tags
         id: meta
-        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        if: steps.release.outcome == 'success'
         uses: docker/metadata-action@v6
         with:
           images: ${{ env.IMAGE }}
           tags: |
             type=raw,value=latest
             type=sha,prefix=sha-
+            type=raw,value=${{ steps.release.outputs.version }},enable=${{ steps.release.outputs.new }}
       - uses: docker/login-action@v4
         if: steps.meta.outcome == 'success'
         with:
@@ -87,7 +103,29 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: COMMIT=${{ github.sha }}
           cache-from: type=gha
+
+  # Tags a new version and publishes its release notes from CHANGELOG.md.
+  release:
+    needs: image
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if [ -n "$(git ls-remote --tags origin "refs/tags/v$version")" ]; then
+            echo "v$version is already released"
+            exit 0
+          fi
+          gh release create "v$version" --target "$GITHUB_SHA" --title "v$version" \
+            --notes "$(node scripts/release.js notes)" --latest
 
   # Merges Dependabot updates that passed, except major versions, which need a human look.
   automerge:

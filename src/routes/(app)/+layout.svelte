@@ -9,6 +9,7 @@
 	import Settings from '@lucide/svelte/icons/settings-2';
 	import ThemeToggle from '#lib/components/ThemeToggle.svelte';
 	import PrivacyToggle from '#lib/components/PrivacyToggle.svelte';
+	import { COMMIT, VERSION } from '#lib/version.ts';
 	import { checkInReminder, currentMonth } from '#lib/domain.ts';
 	import { loadPrefs, prefs, savePrefs } from '#lib/prefs.svelte.ts';
 	import { onMount } from 'svelte';
@@ -45,44 +46,50 @@
 		href === '/' ? page.url.pathname === '/' : page.url.pathname.startsWith(href);
 </script>
 
-<header class="sticky top-0 z-30 bg-paper/85 backdrop-blur-md print:hidden">
-	<div class="mx-auto flex h-16 max-w-5xl items-center gap-8 px-5 sm:px-8">
-		<a href="/" class="flex items-center gap-2.5 font-semibold tracking-tight" aria-label="Batzen, zur Übersicht">
-			<img src="/icon.svg" alt="" class="size-7" />
-			<span class="text-[1.0625rem]">Batzen</span>
-		</a>
-
-		<nav class="hidden flex-1 items-center gap-1 md:flex" aria-label="Hauptnavigation">
-			{#each nav as item (item.href)}
-				<a
-					href={item.href}
-					class="rounded-full px-3.5 py-1.5 text-[0.9375rem] transition-colors {isActive(item.href)
-						? 'bg-sunken text-ink'
-						: 'text-ink-2 hover:text-ink'}"
-					aria-current={isActive(item.href) ? 'page' : undefined}
-					>{item.label}{#if due(item.href)}<span class="ml-1.5 inline-block size-1.5 -translate-y-0.5 rounded-full bg-accent" aria-hidden="true"></span><span class="sr-only">, fällig</span>{/if}</a
-				>
-			{/each}
-		</nav>
-
-		<div class="ml-auto flex items-center gap-1 md:ml-0">
-			<PrivacyToggle />
-			<ThemeToggle theme={data.theme} />
-			<a
-				href="/einstellungen"
-				class="grid size-10 place-items-center rounded-full text-ink-2 transition-colors hover:bg-sunken hover:text-ink {isActive('/einstellungen') ? 'bg-sunken text-ink' : ''}"
-				aria-label="Einstellungen"
-				title="Einstellungen"
-			>
-				<Settings size={19} strokeWidth={1.75} />
+<div class="flex min-h-dvh flex-col print:block">
+	<header class="sticky top-0 z-30 bg-paper/85 backdrop-blur-md print:hidden">
+		<div class="mx-auto flex h-16 max-w-5xl items-center gap-8 px-5 sm:px-8">
+			<a href="/" class="flex items-center gap-2.5 font-semibold tracking-tight" aria-label="Batzen, zur Übersicht">
+				<img src="/icon.svg" alt="" class="size-7" />
+				<span class="text-[1.0625rem]">Batzen</span>
 			</a>
-		</div>
-	</div>
-</header>
 
-<main class="mx-auto max-w-5xl px-5 pb-32 sm:px-8 md:pb-24 print:max-w-none print:p-0">
-	{@render children()}
-</main>
+			<nav class="hidden flex-1 items-center gap-1 md:flex" aria-label="Hauptnavigation">
+				{#each nav as item (item.href)}
+					<a
+						href={item.href}
+						class="rounded-full px-3.5 py-1.5 text-[0.9375rem] transition-colors {isActive(item.href)
+							? 'bg-sunken text-ink'
+							: 'text-ink-2 hover:text-ink'}"
+						aria-current={isActive(item.href) ? 'page' : undefined}
+						>{item.label}{#if due(item.href)}<span class="ml-1.5 inline-block size-1.5 -translate-y-0.5 rounded-full bg-accent" aria-hidden="true"></span><span class="sr-only">, fällig</span>{/if}</a
+					>
+				{/each}
+			</nav>
+
+			<div class="ml-auto flex items-center gap-1 md:ml-0">
+				<PrivacyToggle />
+				<ThemeToggle theme={data.theme} />
+				<a
+					href="/einstellungen"
+					class="grid size-10 place-items-center rounded-full text-ink-2 transition-colors hover:bg-sunken hover:text-ink {isActive('/einstellungen') ? 'bg-sunken text-ink' : ''}"
+					aria-label="Einstellungen"
+					title="Einstellungen"
+				>
+					<Settings size={19} strokeWidth={1.75} />
+				</a>
+			</div>
+		</div>
+	</header>
+
+	<main class="mx-auto w-full max-w-5xl flex-1 px-5 pb-12 sm:px-8 print:max-w-none print:p-0">
+		{@render children()}
+	</main>
+
+	<footer class="mx-auto max-w-5xl px-5 pb-28 text-center text-xs text-ink-3 sm:px-8 md:pb-10 print:hidden">
+		Batzen v{VERSION}{#if COMMIT}<span class="opacity-70">+{COMMIT}</span>{/if}
+	</footer>
+</div>
 
 <nav
 	class="fixed inset-x-0 bottom-0 z-30 border-t border-rule bg-paper/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden print:hidden"

@@ -1,7 +1,7 @@
 services:
   batzen:
     # Built on every change to main by GitHub Actions. Pin a version in .env to roll back,
-    # e.g. BATZEN_TAG=sha-1a2b3c4 (the tags are listed on the package page on GitHub).
+    # e.g. BATZEN_TAG=0.1.0 or BATZEN_TAG=sha-1a2b3c4 (the tags are listed on the package page on GitHub).
     image: ghcr.io/sg303/batzen:${BATZEN_TAG:-latest}
     restart: unless-stopped
     ports:

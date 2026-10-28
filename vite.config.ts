@@ -1,9 +1,17 @@
 import adapter from '@sveltejs/adapter-node';
 import { sveltekit } from '@sveltejs/kit/vite';
 import tailwindcss from '@tailwindcss/vite';
+import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vitest/config';
 
+// The version comes from package.json; the image build passes the commit (see Dockerfile)
+const { version } = JSON.parse(readFileSync('package.json', 'utf8'));
+
 export default defineConfig({
+	define: {
+		__APP_VERSION__: JSON.stringify(version),
+		__APP_COMMIT__: JSON.stringify((process.env.COMMIT ?? '').slice(0, 7))
+	},
 	plugins: [
 		tailwindcss(),
 		sveltekit({
