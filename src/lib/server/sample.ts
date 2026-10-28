@@ -70,6 +70,16 @@ const DUE: Record<string, number> = {
 };
 
 /** Paid from the bonus, so no need to set money aside for it */
+/** Item notes, per item and the month they apply from (made-up providers) */
+const NOTES: Record<string, Record<string, string>> = {
+	Handyabo: {
+		'2023-01': 'Alpina Mobile, 5 GB Daten',
+		'2024-06': 'Wechsel zu Nordlicht Mobile, unlimitierte Daten in der Schweiz'
+	},
+	'Internet & Fernsehen': { '2023-01': 'Glasfaser 300 Mbit/s, TV-Paket inklusive, Kosten mit Mitbewohner geteilt' },
+	'Hausrat, Haftpflicht, Rechtsschutz, Reise': { '2023-01': 'Ein Paket beim gleichen Versicherer, Reiseversicherung inklusive' }
+};
+
 const NOT_RESERVED = new Set(['3. Säule a']);
 
 /** [name, type, versions: [from, CHF, interval, 13th salary]] */
@@ -175,6 +185,7 @@ export function loadSample() {
 						interval,
 						share,
 						dueMonth: interval === 'monthly' ? null : (DUE[name] ?? null),
+						note: NOTES[name]?.[from] ?? null,
 						ended: amount === null
 					})
 					.run();

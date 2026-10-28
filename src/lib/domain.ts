@@ -16,6 +16,9 @@ export interface Category {
 	sort: number;
 }
 
+/** Longest note of an item version (characters) */
+export const ITEM_NOTE_MAX = 500;
+
 export interface ItemVersion {
 	id: number;
 	from: Month;
@@ -27,6 +30,8 @@ export interface ItemVersion {
 	 * means February, May, August and November. Optional, always null for monthly versions.
 	 */
 	dueMonth: number | null;
+	/** Free text valid from this month on, e.g. the provider; kept per version so the history stays */
+	note: string | null;
 	ended: boolean;
 }
 
@@ -35,7 +40,6 @@ export interface Item {
 	name: string;
 	categoryId: number;
 	kind: ItemKind;
-	note: string | null;
 	/** Saving items only: the asset the money goes into */
 	assetId: number | null;
 	/** Counts towards the monthly reserve while its interval is not monthly */
@@ -508,10 +512,9 @@ export function snapshotData(snapshot: Snapshot, current: BudgetData): BudgetDat
 			name: i.name,
 			categoryId: i.categoryId,
 			kind: i.kind,
-			note: null,
 			assetId: null,
 			reserve: current.items.find((c) => c.id === i.id)?.reserve ?? true,
-			versions: [{ id: 0, from, amount: i.amount, interval: i.interval, share: i.share, dueMonth: null, ended: false }]
+			versions: [{ id: 0, from, amount: i.amount, interval: i.interval, share: i.share, dueMonth: null, note: null, ended: false }]
 		})),
 		incomes: snapshot.incomes.map((s) => ({
 			id: s.id,
@@ -1056,8 +1059,8 @@ export function scenarioData(data: BudgetData, changes: ScenarioChange[], month:
 			else incomes = incomes.map(apply);
 		} else if (c.type === 'addItem') {
 			const { name, categoryId, kind, amount, interval, share } = c;
-			const version = { id: 0, from: month, amount, interval, share, dueMonth: null, ended: false };
-			items = [...items, { id: addedId(i), name, categoryId, kind, note: null, assetId: null, reserve: true, versions: [version] }];
+			const version = { id: 0, from: month, amount, interval, share, dueMonth: null, note: null, ended: false };
+			items = [...items, { id: addedId(i), name, categoryId, kind, assetId: null, reserve: true, versions: [version] }];
 		} else {
 			const { name, amount, interval, thirteenth } = c;
 			const version = { id: 0, from: month, amount, interval, thirteenth, ended: false };
@@ -1085,7 +1088,7 @@ export function scenarioEffects(data: BudgetData, changes: ScenarioChange[], mon
 	return changes.map((change): ScenarioEffect => {
 		if (change.type === 'addItem') {
 			const { amount, interval, share } = change;
-			const after = versionMonthly({ id: 0, from: month, amount, interval, share, dueMonth: null, ended: false }).mine;
+			const after = versionMonthly({ id: 0, from: month, amount, interval, share, dueMonth: null, note: null, ended: false }).mine;
 			return { change, target: 'item', name: change.name, active: true, before: 0, after };
 		}
 		if (change.type === 'addIncome') {

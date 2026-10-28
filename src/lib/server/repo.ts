@@ -1,4 +1,4 @@
-import { asc, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, lte, sql } from 'drizzle-orm';
 import { db, schema } from './db';
 import { buildSnapshot, contributionPrompts, withContributions, type Snapshot } from '#lib/domain.ts';
 import type {
@@ -99,7 +99,6 @@ export function saveItem(input: {
 	name: string;
 	categoryId: number;
 	kind: ItemKind;
-	note: string | null;
 	/** Kept only for saving items */
 	assetId?: number | null;
 	/** Left unchanged when missing; new items count towards the reserve */
@@ -125,7 +124,7 @@ export function upsertItemVersion(itemId: number, v: Omit<ItemVersion, 'id'>, re
 			.values({ itemId, ...v })
 			.onConflictDoUpdate({
 				target: [itemVersions.itemId, itemVersions.from],
-				set: { amount: v.amount, interval: v.interval, share: v.share, dueMonth: v.dueMonth, ended: v.ended }
+				set: { amount: v.amount, interval: v.interval, share: v.share, dueMonth: v.dueMonth, note: v.note, ended: v.ended }
 			})
 			.run();
 	});
@@ -329,9 +328,24 @@ export function applyCheckIn(
 					c.action === 'end'
 						? { amount: 0, interval: 'monthly', share: 100, dueMonth: null, ended: true }
 						: { amount: c.amount, interval: c.interval, share: c.share, dueMonth: c.dueMonth, ended: false };
+				// The check-in does not ask for notes: a new version inherits the note in effect, and a
+				// version that already exists for this month keeps its own
+				const note =
+					c.action === 'end'
+						? null
+						: (tx
+								.select({ note: itemVersions.note })
+								.from(itemVersions)
+								.where(and(eq(itemVersions.itemId, c.id), lte(itemVersions.from, asOf)))
+								.orderBy(desc(itemVersions.from))
+								.limit(1)
+								.get()?.note ?? null);
 				tx.insert(itemVersions)
-					.values({ itemId: c.id, from: asOf, ...values })
-					.onConflictDoUpdate({ target: [itemVersions.itemId, itemVersions.from], set: values })
+					.values({ itemId: c.id, from: asOf, ...values, note })
+					.onConflictDoUpdate({
+						target: [itemVersions.itemId, itemVersions.from],
+						set: c.action === 'end' ? { ...values, note: null } : values
+					})
 					.run();
 			} else if (c.target === 'asset') {
 				const values = c.action === 'end' ? { balance: 0, ended: true } : { balance: c.balance, ended: false };

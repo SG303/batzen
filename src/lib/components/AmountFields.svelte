@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { dueMonthsOfYear, INTERVALS, MONTH_NAMES, perYear, type Interval } from '#lib/domain.ts';
+	import { dueMonthsOfYear, INTERVALS, ITEM_NOTE_MAX, MONTH_NAMES, perYear, type Interval } from '#lib/domain.ts';
 	import { chf, parseChf, toInput } from '#lib/money.ts';
 	import { untrack } from 'svelte';
 
@@ -14,8 +14,10 @@
 		share = 100,
 		thirteenth = false,
 		dueMonth = null,
+		note = null,
 		idPrefix,
 		dueMonths = true,
+		notes = false,
 		oninterval
 	}: {
 		variant: 'item' | 'income' | 'asset';
@@ -24,9 +26,12 @@
 		share?: number;
 		thirteenth?: boolean;
 		dueMonth?: number | null;
+		note?: string | null;
 		idPrefix: string;
 		/** Ask for the due month of costs that are not monthly */
 		dueMonths?: boolean;
+		/** Ask for a note on costs, e.g. the provider */
+		notes?: boolean;
 		/** Called with the chosen interval, also initially */
 		oninterval?: (interval: Interval) => void;
 	} = $props();
@@ -36,6 +41,7 @@
 	let shared = $state(untrack(() => share < 100));
 	let shareValue = $state(untrack(() => (share < 100 ? share : 50)));
 	let thirteenthValue = $state(untrack(() => thirteenth));
+	let noteText = $state(untrack(() => note ?? ''));
 	let dueValue = $state(untrack(() => (dueMonth ? String(dueMonth) : '')));
 
 	$effect(() => oninterval?.(intervalValue));
@@ -128,6 +134,22 @@
 		<input type="checkbox" name="thirteenth" bind:checked={thirteenthValue} class="size-[1.125rem] accent-[var(--accent)]" />
 		Mit 13. Monatslohn
 	</label>
+{/if}
+
+{#if variant === 'item' && notes}
+	<div class="mt-4">
+		<label class="label" for="{idPrefix}-note">Notiz</label>
+		<textarea
+			id="{idPrefix}-note"
+			name="note"
+			class="field h-auto! py-2.5 leading-relaxed"
+			rows="2"
+			maxlength={ITEM_NOTE_MAX}
+			placeholder="Anbieter, Vertragsnummer, enthaltene Leistungen …"
+			bind:value={noteText}
+		></textarea>
+		<p class="mt-2 text-[0.8125rem] text-ink-2">Freiwillig. Gilt ab dem gewählten Monat, ein späterer Eintrag kann sie ersetzen.</p>
+	</div>
 {/if}
 
 {#if variant !== 'asset' && preview !== null}

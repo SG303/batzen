@@ -63,7 +63,7 @@ import {
 let nextId = 1;
 
 function iv(from: string, amount: number, extra: Partial<ItemVersion> = {}): ItemVersion {
-	return { id: nextId++, from, amount, interval: 'monthly', share: 100, dueMonth: null, ended: false, ...extra };
+	return { id: nextId++, from, amount, interval: 'monthly', share: 100, dueMonth: null, note: null, ended: false, ...extra };
 }
 
 function ended(from: string): ItemVersion {
@@ -71,7 +71,7 @@ function ended(from: string): ItemVersion {
 }
 
 function item(id: number, name: string, versions: ItemVersion[], extra: Partial<Item> = {}): Item {
-	return { id, name, categoryId: 1, kind: 'fixed', note: null, assetId: null, reserve: true, versions, ...extra };
+	return { id, name, categoryId: 1, kind: 'fixed', assetId: null, reserve: true, versions, ...extra };
 }
 
 function inc(from: string, amount: number, extra: Partial<IncomeVersion> = {}): IncomeVersion {

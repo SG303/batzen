@@ -85,6 +85,9 @@
 			<div class="min-w-0 flex-1">
 				<div class="text-[0.9375rem]">ab {monthLabel(v.from)}</div>
 				<div class="num text-[0.8125rem] text-ink-2">{describe(v)}</div>
+				{#if 'note' in v && v.note}
+					<div class="mt-0.5 whitespace-pre-line text-[0.8125rem] text-ink-3">{v.note}</div>
+				{/if}
 			</div>
 			<button
 				type="button"
@@ -135,6 +138,8 @@
 					share={base && 'share' in base ? base.share : 100}
 					thirteenth={base && 'thirteenth' in base ? base.thirteenth : false}
 					dueMonth={base && 'dueMonth' in base ? base.dueMonth : null}
+					note={base && 'note' in base ? base.note : null}
+					notes
 				/>
 			</div>
 		{/if}

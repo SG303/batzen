@@ -168,6 +168,9 @@
 										? savingLabel(r.item)
 										: ''}{upcoming ? `, ändert ab ${monthLabel(upcoming.from, true)}` : ''}
 								</span>
+								{#if r.version!.note}
+									<span class="block truncate text-[0.8125rem] text-ink-3">{r.version!.note}</span>
+								{/if}
 							</span>
 							<span class="num text-right">{chf(forPeriod(r.value))}</span>
 						</button>

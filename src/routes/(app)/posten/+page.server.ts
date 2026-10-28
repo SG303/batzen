@@ -26,7 +26,6 @@ function itemDetails(form: FormData) {
 		name: f.text(form, 'name', 'Der Name'),
 		categoryId: f.id(form, 'categoryId'),
 		kind,
-		note: null,
 		assetId,
 		reserve: f.reserve(form)
 	};
@@ -44,6 +43,7 @@ export const actions: Actions = {
 				interval,
 				share: f.share(form),
 				dueMonth: f.dueMonth(form, interval),
+				note: f.itemNote(form),
 				ended: false
 			};
 			const itemId = repo.saveItem(item);
@@ -75,6 +75,7 @@ export const actions: Actions = {
 					interval,
 					share: ended ? 100 : f.share(form),
 					dueMonth: ended ? null : f.dueMonth(form, interval),
+					note: ended ? null : f.itemNote(form),
 					ended
 				},
 				f.optionalId(form, 'versionId')

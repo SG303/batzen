@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ensureCategories, loadData, resetAll, saveAsset } from '#lib/server/repo.ts';
+import { ITEM_NOTE_MAX } from '#lib/domain.ts';
 import { actions } from './+page.server';
 
 function post(action: keyof typeof actions, fields: Record<string, string>) {
@@ -108,5 +109,63 @@ describe('due months and reserve', () => {
 		await post('updateItem', fields({ id: String(b.id), name: b.name, reserve: '0' }));
 		await post('updateItem', fields({ id: String(a.id), name: a.name, reserve: '1' }));
 		expect(loadData().items.map((i) => [i.name, i.reserve])).toEqual([['Bonus-3a', true], ['Steuern', false]]);
+	});
+});
+
+describe('item notes', () => {
+	const fields = (extra: Record<string, string>) => ({
+		name: 'Handyabo',
+		categoryId: String(loadData().categories[0].id),
+		kind: 'fixed',
+		amount: '30',
+		interval: 'monthly',
+		from: '2025-01',
+		...extra
+	});
+	const notes = () => loadData().items[0].versions.map((v) => [v.from, v.note]);
+
+	it('keeps the note of every version so a provider change does not overwrite the history', async () => {
+		await post('createItem', fields({ note: '  Anbieter X, 5 GB  ' }));
+		const itemId = String(loadData().items[0].id);
+		await post('saveVersion', { itemId, from: '2026-03', amount: '25', interval: 'monthly', share: '100', note: 'Anbieter Y' });
+		expect(notes()).toEqual([
+			['2025-01', 'Anbieter X, 5 GB'],
+			['2026-03', 'Anbieter Y']
+		]);
+	});
+
+	it('stores no note when blank or missing, and replaces or clears it when a month is saved again', async () => {
+		await post('createItem', fields({ note: '   ' }));
+		const itemId = String(loadData().items[0].id);
+		expect(notes()).toEqual([['2025-01', null]]);
+		const save = (extra: Record<string, string>) =>
+			post('saveVersion', { itemId, from: '2025-01', amount: '30', interval: 'monthly', share: '100', ...extra });
+		await save({ note: 'Mit Roaming' });
+		expect(notes()).toEqual([['2025-01', 'Mit Roaming']]);
+		await save({});
+		expect(notes()).toEqual([['2025-01', null]]);
+	});
+
+	it('drops the note when the item is cancelled', async () => {
+		await post('createItem', fields({ note: 'Anbieter X' }));
+		const itemId = String(loadData().items[0].id);
+		await post('saveVersion', { itemId, from: '2026-01', ended: '1', note: 'Anbieter X' });
+		expect(notes()).toEqual([
+			['2025-01', 'Anbieter X'],
+			['2026-01', null]
+		]);
+	});
+
+	it('cuts a note at the limit', async () => {
+		await post('createItem', fields({ note: 'a'.repeat(ITEM_NOTE_MAX + 50) }));
+		expect(loadData().items[0].versions[0].note).toHaveLength(ITEM_NOTE_MAX);
+	});
+
+	it('does not touch the notes when the item itself is edited', async () => {
+		await post('createItem', fields({ note: 'Anbieter X' }));
+		const id = String(loadData().items[0].id);
+		await post('updateItem', fields({ id, name: 'Mobile' }));
+		expect(loadData().items[0].name).toBe('Mobile');
+		expect(notes()).toEqual([['2025-01', 'Anbieter X']]);
 	});
 });

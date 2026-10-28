@@ -25,8 +25,8 @@ function setup() {
 	const categoryId = loadData().categories[0].id;
 	const assetId = saveAsset({ name: 'Säule 3a', type: 'pillar3a', provider: 'VIAC', note: null });
 	upsertAssetVersion(assetId, { from: '2026-01', balance: 3_000_000, ended: false });
-	const itemId = saveItem({ name: '3. Säule a', categoryId, kind: 'saving', note: null, assetId });
-	upsertItemVersion(itemId, { from: '2026-01', amount: 720_000, interval: 'yearly', share: 100, dueMonth: null, ended: false });
+	const itemId = saveItem({ name: '3. Säule a', categoryId, kind: 'saving', assetId });
+	upsertItemVersion(itemId, { from: '2026-01', amount: 720_000, interval: 'yearly', share: 100, dueMonth: null, note: null, ended: false });
 	return { assetId, itemId, categoryId };
 }
 
@@ -38,7 +38,7 @@ describe('linking saving items to assets', () => {
 
 	it('keeps the link only for saving items', () => {
 		const { assetId, itemId, categoryId } = setup();
-		saveItem({ id: itemId, name: '3. Säule a', categoryId, kind: 'fixed', note: null, assetId });
+		saveItem({ id: itemId, name: '3. Säule a', categoryId, kind: 'fixed', assetId });
 		expect(loadData().items[0].assetId).toBeNull();
 	});
 
