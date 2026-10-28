@@ -28,7 +28,7 @@
 
 	let { data, form }: PageProps = $props();
 	const budget = $derived(data.data);
-	const reminder = $derived(checkInReminder(budget.checkIns, currentMonth()));
+	const reminder = $derived(checkInReminder(budget.checkIns, currentMonth(), data.startedMonth));
 
 	type Decision =
 		| { action: 'keep' }

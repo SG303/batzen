@@ -37,7 +37,7 @@
 
 	/** A dot on "Check-in" once the last one is a while ago, on every page */
 	const checkInDue = $derived(
-		data.data.items.length + data.data.incomes.length > 0 && checkInReminder(data.data.checkIns, currentMonth()).due
+		data.data.items.length + data.data.incomes.length > 0 && checkInReminder(data.data.checkIns, currentMonth(), data.startedMonth).due
 	);
 	const due = (href: string) => href === '/check-in' && checkInDue;
 

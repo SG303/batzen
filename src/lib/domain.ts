@@ -973,8 +973,8 @@ export function budgetFlow(s: YearSummary): BudgetFlow {
 
 // Check-in reminder
 
-/** The overview asks for a new check-in once the last one is this many months old. */
-export const CHECK_IN_REMINDER_MONTHS = 5;
+/** The overview asks for a new check-in once the last one (or, without any, the start of use) is this many months old. */
+export const CHECK_IN_REMINDER_MONTHS = 6;
 
 export interface CheckInReminder {
 	/** The latest check-in up to today; null without any */
@@ -983,9 +983,15 @@ export interface CheckInReminder {
 	due: boolean;
 }
 
-export function checkInReminder(checkIns: CheckIn[], today: Month): CheckInReminder {
+/**
+ * `since` is the month the budget was taken into use. Without any check-in the reminder waits until
+ * the start is long enough ago; an unknown start counts as due.
+ */
+export function checkInReminder(checkIns: CheckIn[], today: Month, since: Month | null = null): CheckInReminder {
 	const last = lastCheckInUpTo(checkIns, today);
-	if (!last) return { last: null, monthsAgo: null, due: true };
+	if (!last) {
+		return { last: null, monthsAgo: null, due: since === null || monthsBetween(since, today) >= CHECK_IN_REMINDER_MONTHS };
+	}
 	const monthsAgo = monthsBetween(last.asOf, today);
 	return { last, monthsAgo, due: monthsAgo >= CHECK_IN_REMINDER_MONTHS };
 }
