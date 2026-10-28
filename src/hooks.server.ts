@@ -12,6 +12,17 @@ const MUTATING = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 /** Pages reachable without a session. Static files are served before this hook runs. */
 const PUBLIC = new Set(['/anmelden', '/einrichten']);
 
+/**
+ * Sent with every response from the app (the Content-Security-Policy is configured in vite.config.ts).
+ * No other site may embed the app in a frame, so nobody can trick a click on a hidden button.
+ */
+const SECURITY_HEADERS = {
+	'x-content-type-options': 'nosniff',
+	'x-frame-options': 'DENY',
+	'referrer-policy': 'same-origin',
+	'cross-origin-opener-policy': 'same-origin'
+};
+
 /** Rejects form posts from other sites: the Origin host must match the requested host. */
 function isCrossSite(request: Request, url: URL): boolean {
 	if (!MUTATING.has(request.method)) return false;
@@ -48,10 +59,12 @@ export const handle: Handle = async ({ event, resolve }) => {
 		redirect(303, hasUsers() ? `/anmelden${returnTo(event.url)}` : '/einrichten');
 	}
 
-	return resolve(event, {
+	const response = await resolve(event, {
 		transformPageChunk: ({ html }) =>
 			html
 				.replace('%theme.attr%', theme === 'system' ? '' : `data-theme="${theme}"`)
 				.replace('%privacy.attr%', event.locals.privacy ? 'data-privacy' : '')
 	});
+	for (const [name, value] of Object.entries(SECURITY_HEADERS)) response.headers.set(name, value);
+	return response;
 };
