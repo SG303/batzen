@@ -22,6 +22,16 @@
 	let newColor = $state(1);
 	let confirmReset = $state('');
 	let restoreFile = $state<File | null>(null);
+	/** User whose deletion is being confirmed with the own password; stays open after a wrong one. */
+	let deleting = $state<number | null>(null);
+	/** User whose deletion failed with the last post */
+	const failedDelete = $derived(form && 'deleting' in form ? Number(form.deleting) : null);
+	$effect(() => {
+		if (failedDelete) deleting = failedDelete;
+	});
+
+	/** Focuses the password field of the delete confirmation once it is shown. */
+	const autofocus = (node: HTMLInputElement) => node.focus();
 
 	const date = (iso: string) =>
 		new Date(iso).toLocaleDateString('de-CH', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -255,7 +265,7 @@
 		<p class="mt-1 text-[0.875rem] text-ink-2">Alle Benutzer sehen und bearbeiten dasselbe Budget.</p>
 	</div>
 	<div>
-		{#if form?.users}<p class="mb-4 text-[0.9375rem] text-critical" role="alert">{form.users}</p>{/if}
+		{#if form?.users && !failedDelete}<p class="mb-4 text-[0.9375rem] text-critical" role="alert">{form.users}</p>{/if}
 		{#if form?.usersDone}<p class="mb-4 text-[0.9375rem] text-good" role="status">{form.usersDone}</p>{/if}
 		<ul class="border-t border-rule">
 			{#each data.users as u (u.id)}
@@ -266,14 +276,40 @@
 					<span class="ml-auto text-[0.8125rem] text-ink-3">
 						{u.lastLoginAt ? `Zuletzt angemeldet am ${date(u.lastLoginAt)}` : 'Noch nie angemeldet'}
 					</span>
-					{#if !self}
-						<form method="post" action="?/deleteUser" use:enhance>
+					{#if !self && deleting !== u.id}
+						<button
+							type="button"
+							class="grid size-8 place-items-center rounded-full text-ink-3 hover:bg-sunken hover:text-critical"
+							aria-label="Benutzer {u.username} löschen"
+							onclick={() => (deleting = u.id)}
+						><Trash size={15} /></button>
+					{/if}
+					{#if !self && deleting === u.id}
+						<form
+							method="post"
+							action="?/deleteUser"
+							class="mt-2 w-full"
+							use:enhance={({ formElement }) => async ({ result, update }) => {
+								if (result.type === 'success') deleting = null;
+								await update();
+								if (result.type === 'failure') {
+									// A wrong password is retyped from scratch.
+									const field = formElement.elements.namedItem('current') as HTMLInputElement;
+									field.value = '';
+									field.focus();
+								}
+							}}
+						>
 							<input type="hidden" name="id" value={u.id} />
-							<button
-								class="grid size-8 place-items-center rounded-full text-ink-3 hover:bg-sunken hover:text-critical"
-								aria-label="Benutzer {u.username} löschen"
-								onclick={(e) => { if (!confirm(`Benutzer «${u.username}» löschen? Die Budgetdaten bleiben erhalten.`)) e.preventDefault(); }}
-							><Trash size={15} /></button>
+							<label class="label" for="delete-current">
+								«{u.username}» löschen? Die Budgetdaten bleiben erhalten. Bestätige mit deinem Passwort.
+							</label>
+							<div class="flex flex-wrap items-center gap-3">
+								<input id="delete-current" name="current" type="password" class="field max-w-48" autocomplete="current-password" required use:autofocus />
+								<button class="btn btn-danger border border-rule-strong">Löschen</button>
+								<button type="button" class="btn btn-quiet" onclick={() => (deleting = null)}>Abbrechen</button>
+							</div>
+							{#if failedDelete === u.id}<p class="mt-2 text-[0.875rem] text-critical" role="alert">{form?.users}</p>{/if}
 						</form>
 					{/if}
 				</li>
@@ -282,8 +318,9 @@
 		<form method="post" action="?/addUser" use:enhance class="mt-4 flex flex-wrap items-center gap-3">
 			<input name="username" value={form?.username ?? ''} placeholder="Benutzername" aria-label="Benutzername" class="field max-w-48" autocomplete="off" autocapitalize="none" spellcheck="false" required />
 			<input name="password" placeholder="Startpasswort" aria-label="Startpasswort" class="field max-w-48" autocomplete="off" minlength="10" required />
+			<input name="current" type="password" placeholder="Dein Passwort" aria-label="Dein Passwort zur Bestätigung" class="field max-w-48" autocomplete="current-password" required />
 			<button class="btn btn-quiet">Hinzufügen</button>
 		</form>
-		<p class="mt-2 text-[0.8125rem] text-ink-3">Das Startpasswort (mindestens 10 Zeichen) kann die Person danach selbst ändern.</p>
+		<p class="mt-2 text-[0.8125rem] text-ink-3">Das Startpasswort (mindestens 10 Zeichen) kann die Person danach selbst ändern. Zur Bestätigung braucht es dein eigenes Passwort.</p>
 	</div>
 </section>

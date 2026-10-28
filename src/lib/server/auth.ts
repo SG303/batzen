@@ -195,32 +195,77 @@ export function clearSessionCookie(cookies: Cookies, request: Request) {
 	cookies.delete(SESSION_COOKIE, cookieOptions(request));
 }
 
-// Throttling failed logins (in memory, per client address)
+// Throttling password attempts (in memory, per client address and per username)
 
 const MAX_FAILURES = 5;
 const LOCK_MS = 60 * 1000;
-const failures = new Map<string, { count: number; lockedUntil: number }>();
+/** Failed attempts older than this are forgotten. */
+const FORGET_MS = 15 * 60 * 1000;
+/** Upper bound for tracked keys, so a flood of addresses or names cannot fill the memory. */
+const MAX_KEYS = 10_000;
+/** In insertion order, oldest attempt first. */
+const failures = new Map<string, { count: number; lockedUntil: number; last: number }>();
 
-/** Seconds until the next attempt is allowed, or 0. */
-export function lockedFor(key: string): number {
+/**
+ * Keys a password attempt counts under. The username key also limits attackers with many
+ * addresses, and behind a reverse proxy, where every client has the proxy's address.
+ */
+export function attemptKeys(client: string, username: string): string[] {
+	return [`ip:${client}`, `user:${username}`];
+}
+
+function lockedFor(key: string, now: number): number {
 	const entry = failures.get(key);
 	if (!entry) return 0;
-	const left = entry.lockedUntil - Date.now();
+	const left = entry.lockedUntil - now;
 	if (left > 0) return Math.ceil(left / 1000);
-	if (entry.lockedUntil) failures.delete(key);
+	if (entry.lockedUntil || now - entry.last > FORGET_MS) failures.delete(key);
 	return 0;
 }
 
-export function recordFailure(key: string) {
-	const entry = failures.get(key) ?? { count: 0, lockedUntil: 0 };
-	entry.count++;
-	if (entry.count >= MAX_FAILURES) {
-		entry.count = 0;
-		entry.lockedUntil = Date.now() + LOCK_MS;
+/**
+ * Counts a password attempt under every key before the password is checked, so parallel requests
+ * cannot slip past the limit. Returns the seconds until the next attempt is allowed (and counts
+ * nothing), or 0. After a correct password, clearFailures takes the attempt back.
+ */
+export function takeAttempt(keys: string[], now = Date.now()): number {
+	const wait = Math.max(0, ...keys.map((key) => lockedFor(key, now)));
+	if (wait) return wait;
+	for (const key of keys) {
+		const entry = failures.get(key) ?? { count: 0, lockedUntil: 0, last: 0 };
+		entry.count++;
+		entry.last = now;
+		if (entry.count >= MAX_FAILURES) {
+			entry.count = 0;
+			entry.lockedUntil = now + LOCK_MS;
+		}
+		failures.delete(key);
+		failures.set(key, entry);
 	}
-	failures.set(key, entry);
+	if (failures.size > MAX_KEYS) {
+		for (const key of failures.keys()) lockedFor(key, now);
+		for (const key of failures.keys()) {
+			if (failures.size <= MAX_KEYS) break;
+			failures.delete(key);
+		}
+	}
+	return 0;
 }
 
-export function clearFailures(key: string) {
-	failures.delete(key);
+export function clearFailures(keys: string[]) {
+	for (const key of keys) failures.delete(key);
+}
+
+/** Checks the password of a signed-in user before a sensitive change, throttled like the login. */
+export async function confirmPassword(
+	user: User,
+	client: string,
+	password: string
+): Promise<'ok' | 'wrong' | { wait: number }> {
+	const keys = attemptKeys(client, user.username);
+	const wait = takeAttempt(keys);
+	if (wait) return { wait };
+	if (!(await checkUserPassword(user.id, password))) return 'wrong';
+	clearFailures(keys);
+	return 'ok';
 }

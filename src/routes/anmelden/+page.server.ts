@@ -1,13 +1,13 @@
 import { fail, redirect } from '@sveltejs/kit';
 import {
+	attemptKeys,
 	authenticate,
 	clearFailures,
 	createSession,
 	hasUsers,
-	lockedFor,
 	normalizeUsername,
-	recordFailure,
-	setSessionCookie
+	setSessionCookie,
+	takeAttempt
 } from '#lib/server/auth.ts';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -29,19 +29,16 @@ export const actions: Actions = {
 		const username = normalizeUsername(String(form.get('username') ?? ''));
 		const password = String(form.get('password') ?? '');
 
-		const client = getClientAddress();
-		const wait = lockedFor(client);
+		const keys = attemptKeys(getClientAddress(), username);
+		const wait = takeAttempt(keys);
 		if (wait) {
 			return fail(429, { username, error: `Zu viele Fehlversuche. Versuche es in ${wait} Sekunden wieder.` });
 		}
 
 		const user = await authenticate(username, password);
-		if (!user) {
-			recordFailure(client);
-			return fail(400, { username, error: 'Benutzername oder Passwort ist falsch.' });
-		}
+		if (!user) return fail(400, { username, error: 'Benutzername oder Passwort ist falsch.' });
 
-		clearFailures(client);
+		clearFailures(keys);
 		setSessionCookie(cookies, request, createSession(user.id));
 		redirect(303, target(url));
 	}

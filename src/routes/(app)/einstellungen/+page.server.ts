@@ -12,8 +12,8 @@ import { backupStatus, runBackup } from '#lib/server/backup.ts';
 import {
 	checkPassword,
 	checkUsername,
-	checkUserPassword,
 	clearSessionCookie,
+	confirmPassword,
 	createUser,
 	deleteOtherSessions,
 	deleteSession,
@@ -32,12 +32,13 @@ export const actions: Actions = {
 		clearSessionCookie(cookies, request);
 		redirect(303, '/anmelden');
 	},
-	changePassword: async ({ request, locals }) => {
+	changePassword: async ({ request, locals, getClientAddress }) => {
 		const user = locals.user!;
 		const form = await request.formData();
 		const password = String(form.get('password') ?? '');
-		if (!(await checkUserPassword(user.id, String(form.get('current') ?? '')))) {
-			return fail(400, { account: 'Das aktuelle Passwort stimmt nicht.' });
+		const confirmed = await confirmPassword(user, getClientAddress(), String(form.get('current') ?? ''));
+		if (confirmed !== 'ok') {
+			return fail(400, { account: confirmError(confirmed, 'Das aktuelle Passwort stimmt nicht.') });
 		}
 		const error = checkPassword(password, String(form.get('repeat') ?? ''));
 		if (error) return fail(400, { account: error });
@@ -45,21 +46,25 @@ export const actions: Actions = {
 		deleteOtherSessions(user.id, user.sessionId);
 		return { accountDone: 'Passwort geändert. Andere Geräte sind jetzt abgemeldet.' };
 	},
-	addUser: async ({ request }) => {
+	addUser: async ({ request, locals, getClientAddress }) => {
 		const form = await request.formData();
 		const username = normalizeUsername(String(form.get('username') ?? ''));
 		const password = String(form.get('password') ?? '');
 		const error = checkUsername(username) ?? checkPassword(password, password);
 		if (error) return fail(400, { users: error, username });
+		const confirmed = await confirmPassword(locals.user!, getClientAddress(), String(form.get('current') ?? ''));
+		if (confirmed !== 'ok') return fail(400, { users: confirmError(confirmed), username });
 		if (!(await createUser(username, password))) {
 			return fail(400, { users: `Den Benutzer «${username}» gibt es schon.`, username });
 		}
 		return { usersDone: `Benutzer «${username}» hinzugefügt.` };
 	},
-	deleteUser: async ({ request, locals }) => {
+	deleteUser: async ({ request, locals, getClientAddress }) => {
 		const form = await request.formData();
 		const id = Number(form.get('id'));
 		if (id === locals.user!.id) return fail(400, { users: 'Du kannst dein eigenes Konto nicht löschen.' });
+		const confirmed = await confirmPassword(locals.user!, getClientAddress(), String(form.get('current') ?? ''));
+		if (confirmed !== 'ok') return fail(400, { users: confirmError(confirmed), deleting: id });
 		if (!deleteUser(id)) return fail(400, { users: 'Das letzte Konto kann nicht gelöscht werden.' });
 	},
 	sample: () => {
@@ -128,5 +133,11 @@ export const actions: Actions = {
 		moveCategory(Number(form.get('id')), form.get('direction') === 'up' ? -1 : 1);
 	}
 };
+
+/** Message for a password confirmation that did not pass. */
+const confirmError = (result: 'wrong' | { wait: number }, wrong = 'Dein Passwort stimmt nicht.') =>
+	result === 'wrong'
+		? wrong
+		: `Zu viele Fehlversuche. Versuche es in ${result.wait} Sekunden wieder.`;
 
 const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
