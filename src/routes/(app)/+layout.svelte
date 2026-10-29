@@ -9,7 +9,7 @@
 	import Settings from '@lucide/svelte/icons/settings-2';
 	import ThemeToggle from '#lib/components/ThemeToggle.svelte';
 	import PrivacyToggle from '#lib/components/PrivacyToggle.svelte';
-	import { COMMIT, VERSION } from '#lib/version.ts';
+	import { VERSION } from '#lib/version.ts';
 	import { checkInReminder, currentMonth } from '#lib/domain.ts';
 	import { loadPrefs, prefs, savePrefs } from '#lib/prefs.svelte.ts';
 	import { onMount } from 'svelte';
@@ -87,7 +87,7 @@
 	</main>
 
 	<footer class="mx-auto max-w-5xl px-5 pb-28 text-center text-xs text-ink-3 sm:px-8 md:pb-10 print:hidden">
-		Batzen v{VERSION}{#if COMMIT}<span class="opacity-70">+{COMMIT}</span>{/if}
+		v{VERSION}
 	</footer>
 </div>
 
