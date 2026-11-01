@@ -4,6 +4,12 @@ All notable changes to Batzen are listed here. The format follows [Keep a Change
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-01
+
+### Fixed
+
+- The installed Android app no longer shows a green bar below the navigation; the system bar now matches the dark background. Chrome picks this up within a day or two, or after reinstalling the app.
+
 ## [0.2.0] - 2026-11-01
 
 ### Changed
@@ -28,6 +34,7 @@ First versioned release. The app already covered:
 - Privacy mode, light and dark theme
 - The current version at the bottom of every page
 
-[Unreleased]: https://github.com/SG303/batzen/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/SG303/batzen/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/SG303/batzen/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/SG303/batzen/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/SG303/batzen/releases/tag/v0.1.0
