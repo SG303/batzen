@@ -18,6 +18,7 @@ import {
 	summarizeYear,
 	versionAt,
 	versionMonthly,
+	withoutThirteenth,
 	yearEndAssets,
 	yearRange,
 	assetPerformance,
@@ -279,6 +280,30 @@ describe('summarizeYear', () => {
 		expect(june.income.counted).toBe(780_000);
 		const july = summarizeMonth(budget, '2025-07');
 		expect(july.income.counted).toBe(780_000 + 120_000);
+	});
+
+	it('withoutThirteenth takes the 13th salary out of income, free amount and sources', () => {
+		// Lohn: 13th share is 1/12 of the monthly salary, weighted like the salary itself
+		const extra = (3 * 50_000 + 9 * 60_000) / 12;
+		const monthly = withoutThirteenth(year);
+		expect(year.income.thirteenth).toBeCloseTo(extra);
+		expect(monthly.income.counted).toBeCloseTo(year.income.counted - extra);
+		expect(monthly.income.salary).toBeCloseTo(year.income.salary - extra);
+		expect(monthly.income.other).toBeCloseTo(year.income.other);
+		expect(monthly.free).toBeCloseTo(year.free - extra);
+		expect(monthly.sources.find((x) => x.source.id === 1)!.monthly).toBeCloseTo(
+			year.sources.find((x) => x.source.id === 1)!.monthly - extra
+		);
+		// the 13th stays known for display and a second call changes nothing
+		expect(monthly.income.thirteenth).toBeCloseTo(extra);
+		expect(withoutThirteenth(monthly)).toBe(monthly);
+		expect(savingsRate(monthly)!.total).toBeLessThan(savingsRate(year)!.total);
+	});
+
+	it('withoutThirteenth leaves a summary without 13th salary alone', () => {
+		const plain = summarizeYear(data([], [source(1, 'Lohn', [inc('2025-01', 500_000)])]), 2025);
+		expect(plain.income.thirteenth).toBe(0);
+		expect(withoutThirteenth(plain)).toBe(plain);
 	});
 });
 

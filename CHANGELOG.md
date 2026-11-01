@@ -4,6 +4,12 @@ All notable changes to Batzen are listed here. The format follows [Keep a Change
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-01
+
+### Changed
+
+- The monthly view of the overview no longer counts the 13th salary: income, free amount, saving rate and flow diagram show what is available month by month, and the 13th is listed as an extra line. The yearly view still includes it.
+
 ## [0.1.0] - 2026-10-28
 
 First versioned release. The app already covered:
@@ -22,5 +28,6 @@ First versioned release. The app already covered:
 - Privacy mode, light and dark theme
 - The current version at the bottom of every page
 
-[Unreleased]: https://github.com/SG303/batzen/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/SG303/batzen/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/SG303/batzen/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/SG303/batzen/releases/tag/v0.1.0

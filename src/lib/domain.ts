@@ -286,6 +286,11 @@ export function incomeMonthly(v: IncomeVersion): number {
 	return (v.amount * (v.thirteenth ? 13 : 12)) / 12;
 }
 
+/** The part of `incomeMonthly` that comes from the 13th salary; paid out once a year, so not available month by month. */
+export function thirteenthMonthly(v: IncomeVersion): number {
+	return v.interval === 'monthly' && v.thirteenth ? v.amount / 12 : 0;
+}
+
 /** Default for new income sources: salary and other income count, bonus and Spesen don't. */
 export function countedByDefault(type: IncomeType): boolean {
 	return INCOME_TYPES.find((t) => t.value === type)?.counted ?? true;
@@ -320,12 +325,12 @@ export interface CategorySummary {
 
 export interface YearSummary {
 	year: number;
-	/** Monthly averages over the period, own share */
-	income: { counted: number; bonus: number; expenses: number; other: number; salary: number };
+	/** Monthly averages over the period, own share; `thirteenth` is the 13th salary share of the counted income, already included in it */
+	income: { counted: number; bonus: number; expenses: number; other: number; salary: number; thirteenth: number };
 	/** Incomes not counted towards the budget, monthly average */
 	excluded: { name: string; monthly: number }[];
-	/** Every income with an amount in the period, monthly average */
-	sources: { source: IncomeSource; monthly: number }[];
+	/** Every income with an amount in the period, monthly average (`thirteenth`: the 13th salary share of it) */
+	sources: { source: IncomeSource; monthly: number; thirteenth: number }[];
 	spending: number;
 	fixed: number;
 	variable: number;
@@ -373,9 +378,10 @@ function summarizeMonths(data: BudgetData, months: Month[]): YearSummary {
 		};
 	});
 
-	const income = { counted: 0, bonus: 0, expenses: 0, other: 0, salary: 0 };
+	const income = { counted: 0, bonus: 0, expenses: 0, other: 0, salary: 0, thirteenth: 0 };
 	const excluded = new Map<string, number>();
 	const bySource = new Map<number, number>();
+	const thirteenthBySource = new Map<number, number>();
 	let coveredMonths = 0;
 	for (const m of months) {
 		let any = false;
@@ -385,12 +391,16 @@ function summarizeMonths(data: BudgetData, months: Month[]): YearSummary {
 			any = true;
 			const value = incomeMonthly(v) / n;
 			bySource.set(src.id, (bySource.get(src.id) ?? 0) + value);
+			const extra = thirteenthMonthly(v) / n;
+			thirteenthBySource.set(src.id, (thirteenthBySource.get(src.id) ?? 0) + extra);
 			if (src.type === 'salary') income.salary += value;
 			if (src.type === 'other') income.other += value;
 			if (src.type === 'bonus') income.bonus += value;
 			if (src.type === 'expenses') income.expenses += value;
-			if (src.counted) income.counted += value;
-			else excluded.set(src.name, (excluded.get(src.name) ?? 0) + value);
+			if (src.counted) {
+				income.counted += value;
+				income.thirteenth += extra;
+			} else excluded.set(src.name, (excluded.get(src.name) ?? 0) + value);
 		}
 		if (!any && data.items.some((i) => versionAt(i.versions, m))) any = true;
 		if (any) coveredMonths++;
@@ -425,7 +435,7 @@ function summarizeMonths(data: BudgetData, months: Month[]): YearSummary {
 		excluded: [...excluded].map(([name, monthly]) => ({ name, monthly })),
 		sources: data.incomes.flatMap((source) => {
 			const monthly = bySource.get(source.id) ?? 0;
-			return monthly > 0 ? [{ source, monthly }] : [];
+			return monthly > 0 ? [{ source, monthly, thirteenth: thirteenthBySource.get(source.id) ?? 0 }] : [];
 		}),
 		spending: fixed + variable,
 		fixed,
@@ -435,6 +445,30 @@ function summarizeMonths(data: BudgetData, months: Month[]): YearSummary {
 		categories,
 		items,
 		coveredMonths
+	};
+}
+
+/**
+ * The summary as it is available month by month: the 13th salary is paid out once a year and not
+ * budgeted, so it leaves the income, the free amount and the saving rate. The year view keeps it.
+ */
+export function withoutThirteenth(s: YearSummary): YearSummary {
+	if (s.sources.every((x) => x.thirteenth === 0)) return s;
+	const extra = s.sources.filter((x) => x.source.counted).reduce((a, x) => a + x.thirteenth, 0);
+	const byType = (type: IncomeType) =>
+		s.sources.filter((x) => x.source.type === type).reduce((a, x) => a + x.thirteenth, 0);
+	return {
+		...s,
+		income: {
+			...s.income,
+			counted: s.income.counted - extra,
+			salary: s.income.salary - byType('salary'),
+			other: s.income.other - byType('other'),
+			bonus: s.income.bonus - byType('bonus'),
+			expenses: s.income.expenses - byType('expenses')
+		},
+		sources: s.sources.map((x) => ({ ...x, monthly: x.monthly - x.thirteenth, thirteenth: 0 })),
+		free: s.free - extra
 	};
 }
 
