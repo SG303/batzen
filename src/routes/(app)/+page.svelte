@@ -20,8 +20,10 @@
 		summarizeMonth,
 		summarizeYear,
 		WORKDAYS_PER_YEAR,
+		withoutThirteenth,
 		yearRange,
-		type CheckIn
+		type CheckIn,
+		type YearSummary
 	} from '#lib/domain.ts';
 	import BillCalendar from '#lib/components/BillCalendar.svelte';
 	import CheckInNote from '#lib/components/CheckInNote.svelte';
@@ -64,16 +66,21 @@
 		return i > 0 ? checkIns[i - 1] : null;
 	});
 
-	const s = $derived(
+	/** The 13th salary is not available month by month, so only the year view counts it. */
+	const monthView = $derived(prefs.period === 'month');
+	const shown = (x: YearSummary) => (monthView ? withoutThirteenth(x) : x);
+
+	const full = $derived(
 		selected ? summarizeMonth(checkInData(selected, budget), selected.asOf) : summarizeYear(budget, year)
 	);
+	const s = $derived(shown(full));
 	const prev = $derived.by(() => {
 		if (selected) {
 			return previousCheckIn
-				? summarizeMonth(checkInData(previousCheckIn, budget), previousCheckIn.asOf)
+				? shown(summarizeMonth(checkInData(previousCheckIn, budget), previousCheckIn.asOf))
 				: null;
 		}
-		return years.includes(year - 1) ? summarizeYear(budget, year - 1) : null;
+		return years.includes(year - 1) ? shown(summarizeYear(budget, year - 1)) : null;
 	});
 	const compareLabel = $derived(
 		selected
@@ -120,7 +127,7 @@
 	const rate = $derived(savingsRate(s));
 	const flow = $derived(budgetFlow(s));
 	const out = $derived(s.spending + s.saving);
-	const dayValue = $derived((income * 12) / WORKDAYS_PER_YEAR);
+	const dayValue = $derived((full.income.counted * 12) / WORKDAYS_PER_YEAR);
 	const topItems = $derived(
 		[...s.items]
 			.filter((i) => i.item.kind !== 'saving' && i.monthly.mine > 0)
@@ -246,6 +253,11 @@
 					</div>
 				{/if}
 			</dl>
+			{#if monthView && s.income.thirteenth > 0}
+				<p class="mt-3 text-[0.8125rem] text-ink-3">
+					Zusätzlich im Jahr: 13. Monatslohn {chf(s.income.thirteenth * 12)}, nicht im Monatsbudget.
+				</p>
+			{/if}
 			{#if s.excluded.length}
 				<p class="mt-3 text-[0.8125rem] text-ink-3">
 					Nicht eingerechnet:
