@@ -4,6 +4,12 @@ All notable changes to Batzen are listed here. The format follows [Keep a Change
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-11-03
+
+### Fixed
+
+- On phones, the "Zahlen pro Jahr" table in the history now fits the screen, so you no longer have to scroll sideways to see the figures.
+
 ## [0.2.1] - 2026-11-01
 
 ### Fixed
@@ -34,7 +40,8 @@ First versioned release. The app already covered:
 - Privacy mode, light and dark theme
 - The current version at the bottom of every page
 
-[Unreleased]: https://github.com/SG303/batzen/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/SG303/batzen/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/SG303/batzen/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/SG303/batzen/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/SG303/batzen/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/SG303/batzen/releases/tag/v0.1.0
