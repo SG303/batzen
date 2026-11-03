@@ -182,6 +182,21 @@ describe('yearRange', () => {
 		expect(yearRange(d, '2026-10')).toEqual([2023, 2024, 2025, 2026]);
 	});
 
+	it('includes asset-only history and future balances', () => {
+		const d = data([]);
+		d.assets = [{ id: 1, name: 'Account', type: 'account', provider: null, note: null, versions: [
+			{ id: 1, from: '2022-01', balance: 100_000, ended: false },
+			{ id: 2, from: '2028-01', balance: 200_000, ended: false }
+		] }];
+		expect(yearRange(d, '2026-10')).toEqual([2022, 2023, 2024, 2025, 2026, 2027, 2028]);
+	});
+
+	it('keeps check-in years even after the original budget entries were removed', () => {
+		const d = data([]);
+		d.checkIns = [{ id: 1, asOf: '2021-05', completedAt: '2026-10-01', note: null, snapshot: null }];
+		expect(yearRange(d, '2026-10')).toEqual([2021, 2022, 2023, 2024, 2025, 2026]);
+	});
+
 	it('includes future entries', () => {
 		const d = data([item(1, 'Miete', [iv('2025-01', 1), iv('2028-01', 2)])]);
 		expect(yearRange(d, '2026-10')).toEqual([2025, 2026, 2027, 2028]);
@@ -947,6 +962,19 @@ describe('goals', () => {
 	it('counts saving items that feed no asset plus what is left over as free to save', () => {
 		// 5'000 − 3'000 − 600 − 200 = 1'200 left over, plus 200 into no asset
 		expect(freeSaving(summarizeMonth(budget, '2026-10'))).toBe(140_000);
+	});
+
+	it.each([
+		[100_000, 100_000, 50_000, 0],
+		[100_000, 80_000, 50_000, 20_000],
+		[100_000, 120_000, 50_000, 0]
+	])('deducts a deficit from unlinked savings (%i income, %i expenses, %i saving)', (income, expenses, saving, expected) => {
+		const d = data([
+			item(1, 'Expenses', [iv('2026-01', expenses)]),
+			item(2, 'Saving', [iv('2026-01', saving)], { kind: 'saving' })
+		], [source(1, 'Salary', [inc('2026-01', income)])]);
+		expect(freeSaving(summarizeMonth(d, '2026-10'))).toBe(expected);
+		expect(goalStatus(d, goal({ target: 50_000, due: '2026-10' }), '2026-10')).toMatchObject({ pace: expected, state: 'behind' });
 	});
 
 	it('measures a goal on an asset at the pace of the saving items that feed it', () => {

@@ -124,7 +124,7 @@ export const actions: Actions = {
 		const form = await request.formData();
 		if (!deleteCategory(Number(form.get('id')))) {
 			return fail(400, {
-				category: 'Diese Kategorie enthält noch Posten. Verschiebe sie zuerst in eine andere Kategorie.'
+				category: 'Diese Kategorie wird noch von Posten oder einem Szenario verwendet. Ändere diese zuerst.'
 			});
 		}
 	},

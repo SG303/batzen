@@ -129,19 +129,21 @@
 
 		{#if mode.kind === 'new' || (mode.kind === 'edit' && !mode.version.ended)}
 			{@const base = mode.kind === 'edit' ? mode.version : (active ?? sorted[0])}
-			<div class="mt-4">
-				<AmountFields
-					{variant}
-					idPrefix="version"
-					amount={base && !base.ended ? ('balance' in base ? base.balance : base.amount) : 0}
-					interval={base && 'interval' in base ? base.interval : undefined}
-					share={base && 'share' in base ? base.share : 100}
-					thirteenth={base && 'thirteenth' in base ? base.thirteenth : false}
-					dueMonth={base && 'dueMonth' in base ? base.dueMonth : null}
-					note={base && 'note' in base ? base.note : null}
-					notes
-				/>
-			</div>
+			{#key mode.kind === 'edit' ? mode.version.id : mode.kind}
+				<div class="mt-4">
+					<AmountFields
+						{variant}
+						idPrefix="version"
+						amount={base && !base.ended ? ('balance' in base ? base.balance : base.amount) : 0}
+						interval={base && 'interval' in base ? base.interval : undefined}
+						share={base && 'share' in base ? base.share : 100}
+						thirteenth={base && 'thirteenth' in base ? base.thirteenth : false}
+						dueMonth={base && 'dueMonth' in base ? base.dueMonth : null}
+						note={base && 'note' in base ? base.note : null}
+						notes
+					/>
+				</div>
+			{/key}
 		{/if}
 
 		{#if error}<p class="mt-3 text-[0.875rem] text-critical" role="alert">{error}</p>{/if}

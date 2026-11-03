@@ -1,5 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { createUser, listUsers } from '#lib/server/auth.ts';
+import { deleteCategory, loadData, resetAll, saveCategory, saveItem, saveScenario, setScenarioChanges } from '#lib/server/repo.ts';
+import { parseExport, restoreData } from '#lib/server/restore.ts';
 import { actions } from './+page.server';
 
 /** Calls a form action the way SvelteKit does, signed in as `user`. */
@@ -60,5 +62,34 @@ describe('Benutzer form actions', () => {
 			data: { users: 'Zu viele Fehlversuche. Versuche es in 60 Sekunden wieder.' }
 		});
 		expect(names()).not.toContain('versuch');
+	});
+});
+
+describe('category deletion', () => {
+	it('keeps categories used by scenario additions and preserves export round trips', async () => {
+		resetAll();
+		saveCategory({ name: 'Scenario category', color: 1 });
+		const category = loadData().categories[0];
+		const scenario = saveScenario({ name: 'Move', note: null });
+		setScenarioChanges(scenario, [{ type: 'addItem', name: 'Rent', categoryId: category.id, kind: 'fixed', amount: 100_000, interval: 'monthly', share: 100 }]);
+		expect(await post('deleteCategory', { id: 1, username: 'admin' }, { id: String(category.id) })).toMatchObject({
+			status: 400, data: { category: expect.stringContaining('Szenario') }
+		});
+		expect(loadData().categories).toContainEqual(category);
+		const exported = JSON.parse(JSON.stringify(loadData()));
+		restoreData(parseExport(exported));
+		expect(loadData()).toEqual(exported);
+		setScenarioChanges(scenario, []);
+		expect(deleteCategory(category.id)).toBe(true);
+	});
+
+	it('still protects real items and allows unused categories to be deleted', () => {
+		resetAll();
+		saveCategory({ name: 'Used', color: 1 });
+		saveCategory({ name: 'Unused', color: 2 });
+		const [used, unused] = loadData().categories;
+		saveItem({ name: 'Rent', categoryId: used.id, kind: 'fixed' });
+		expect(deleteCategory(used.id)).toBe(false);
+		expect(deleteCategory(unused.id)).toBe(true);
 	});
 });

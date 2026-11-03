@@ -24,3 +24,7 @@ vite.config.ts.timestamp-*
 
 # Local database
 /data
+
+# Browser test artifacts
+/playwright-report
+/test-results
