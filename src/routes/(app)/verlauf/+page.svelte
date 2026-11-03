@@ -115,22 +115,22 @@
 	<section class="mt-16" aria-labelledby="table">
 		<h2 id="table" class="mb-5 text-[1.375rem] font-medium tracking-[-0.015em]">Zahlen pro Jahr</h2>
 		<div class="-mx-5 overflow-x-auto px-5 sm:mx-0 sm:px-0">
-			<table class="num w-full min-w-[34rem] text-[0.9375rem]">
+			<table class="num w-full text-[0.8125rem] sm:min-w-[34rem] sm:text-[0.9375rem]">
 				<thead>
 					<tr class="border-b border-rule text-[0.8125rem] text-ink-3">
-						<th class="py-2.5 pr-4 text-left font-normal">CHF {prefs.period === 'year' ? 'pro Jahr' : 'pro Monat'}</th>
-						{#each withData as s (s.year)}<th class="px-2 py-2.5 text-right font-normal">{s.year}</th>{/each}
+						<th class="py-2.5 pr-2 text-left font-normal sm:pr-4">CHF {prefs.period === 'year' ? 'pro Jahr' : 'pro Monat'}</th>
+						{#each withData as s (s.year)}<th class="px-1 py-2.5 text-right font-normal sm:px-2">{s.year}</th>{/each}
 					</tr>
 				</thead>
 				<tbody>
 					{#each rows as r (r.label)}
 						<tr class="border-b border-rule">
-							<th scope="row" class="py-3 pr-4 text-left {r.strong ? 'font-medium' : 'font-normal text-ink-2'}">{r.label}</th>
+							<th scope="row" class="py-3 pr-2 text-left sm:pr-4 {r.strong ? 'font-medium' : 'font-normal text-ink-2'}">{r.label}</th>
 							{#each withData as s, i (s.year)}
-								<td class="px-2 py-3 text-right {r.strong ? 'font-medium' : ''}">
+								<td class="px-1 py-3 text-right whitespace-nowrap sm:px-2 {r.strong ? 'font-medium' : ''}">
 									{chf(forPeriod(r.get(s)))}
 									{#if i > 0}
-										<span class="block text-[0.75rem] font-normal text-ink-3">{chfDelta(forPeriod(r.get(s) - r.get(withData[i - 1])))}</span>
+										<span class="block text-[0.6875rem] font-normal text-ink-3 sm:text-[0.75rem]">{chfDelta(forPeriod(r.get(s) - r.get(withData[i - 1])))}</span>
 									{/if}
 								</td>
 							{/each}
@@ -138,10 +138,10 @@
 					{/each}
 					{#each rates as r (r.label)}
 						<tr class="border-b border-rule">
-							<th scope="row" class="py-3 pr-4 text-left font-normal {r.strong ? 'text-ink-2' : 'pl-4 text-[0.875rem] text-ink-3'}">{r.label}</th>
+							<th scope="row" class="py-3 pr-2 text-left font-normal sm:pr-4 {r.strong ? 'text-ink-2' : 'pl-2 text-[0.75rem] text-ink-3 sm:pl-4 sm:text-[0.875rem]'}">{r.label}</th>
 							{#each withData as s (s.year)}
 								{@const v = r.get(s)}
-								<td class="px-2 py-3 text-right {r.strong ? '' : 'text-[0.875rem] text-ink-2'}">{v === undefined ? '–' : `${decimal(v)} %`}</td>
+								<td class="px-1 py-3 text-right whitespace-nowrap sm:px-2 {r.strong ? '' : 'text-[0.8125rem] text-ink-2 sm:text-[0.875rem]'}">{v === undefined ? '–' : `${decimal(v)} %`}</td>
 							{/each}
 						</tr>
 					{/each}
@@ -149,9 +149,9 @@
 					{#each usedCategories as c (c.id)}
 						<tr class="border-b border-rule">
 							<th scope="row" class="py-3 pr-4 text-left font-normal">
-								<span class="flex items-center gap-2.5"><span class="swatch" style="background: {catColor(c.color)}"></span>{c.name}</span>
+								<span class="flex items-center gap-2 sm:gap-2.5"><span class="swatch" style="background: {catColor(c.color)}"></span>{c.name}</span>
 							</th>
-							{#each withData as s (s.year)}<td class="px-2 py-3 text-right">{chf(forPeriod(catValue(s, c.id)))}</td>{/each}
+							{#each withData as s (s.year)}<td class="px-1 py-3 text-right whitespace-nowrap sm:px-2">{chf(forPeriod(catValue(s, c.id)))}</td>{/each}
 						</tr>
 					{/each}
 				</tbody>
