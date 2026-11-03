@@ -49,7 +49,10 @@
 		return years.includes(y) ? y : Number(today.slice(0, 4));
 	});
 
-	const empty = $derived(budget.items.length === 0 && budget.incomes.length === 0);
+	const empty = $derived(
+		budget.items.length === 0 && budget.incomes.length === 0 &&
+		budget.assets.length === 0 && budget.checkIns.length === 0
+	);
 
 	/** All check-ins in time order; a selected one shows its frozen snapshot instead of the year. */
 	const checkIns = $derived(

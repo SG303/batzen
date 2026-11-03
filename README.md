@@ -31,6 +31,8 @@ npm install
 npm run dev          # http://localhost:5173
 npm run check        # type check
 npm test             # unit tests (Vitest)
+npx playwright install chromium  # once, for browser tests
+npm run test:e2e     # browser regression tests (isolated in-memory database)
 ```
 
 The database lives in `data/batzen.db` (override with `DATABASE_PATH`). Migrations in `drizzle/` run automatically on startup. Sample data can be loaded under Settings.

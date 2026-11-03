@@ -281,10 +281,14 @@ export function saveCategory(input: { id?: number; name: string; color: number }
 		.run();
 }
 
-/** Returns false if the category still has items. */
+/** Returns false if the category is still used by an item or a scenario addition. */
 export function deleteCategory(id: number): boolean {
 	const used = db.select({ id: items.id }).from(items).where(eq(items.categoryId, id)).limit(1).get();
 	if (used) return false;
+	const scenarioUsesCategory = db.select().from(scenarios).all().some((scenario) =>
+		parseChanges(scenario.changes).some((change) => change.type === 'addItem' && change.categoryId === id)
+	);
+	if (scenarioUsesCategory) return false;
 	db.delete(categories).where(eq(categories.id, id)).run();
 	return true;
 }

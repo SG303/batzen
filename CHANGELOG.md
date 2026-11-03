@@ -4,6 +4,15 @@ All notable changes to Batzen are listed here. The format follows [Keep a Change
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-11-03
+
+### Fixed
+
+- Switching directly between history entries now loads the selected entry's own amount, interval, share and note before saving.
+- Categories used by scenarios can no longer be deleted, keeping JSON exports restorable.
+- Savings goals now deduct budget deficits from unlinked savings instead of showing money that is not available.
+- Historical check-ins and asset-only years remain accessible in the overview and year review, even without cost or income entries.
+
 ## [0.2.2] - 2026-11-03
 
 ### Fixed
@@ -40,7 +49,8 @@ First versioned release. The app already covered:
 - Privacy mode, light and dark theme
 - The current version at the bottom of every page
 
-[Unreleased]: https://github.com/SG303/batzen/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/SG303/batzen/compare/v0.2.3...HEAD
+[0.2.3]: https://github.com/SG303/batzen/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/SG303/batzen/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/SG303/batzen/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/SG303/batzen/compare/v0.1.0...v0.2.0

@@ -299,7 +299,9 @@ export function countedByDefault(type: IncomeType): boolean {
 export function yearRange(data: BudgetData, today = currentMonth()): number[] {
 	const months = [
 		...data.items.flatMap((i) => i.versions.map((v) => v.from)),
-		...data.incomes.flatMap((s) => s.versions.map((v) => v.from))
+		...data.incomes.flatMap((s) => s.versions.map((v) => v.from)),
+		...data.assets.flatMap((a) => a.versions.map((v) => v.from)),
+		...data.checkIns.map((c) => c.asOf)
 	];
 	const thisYear = Number(today.slice(0, 4));
 	if (!months.length) return [thisYear];
@@ -1179,7 +1181,7 @@ export function freeSaving(s: YearSummary): number {
 	const unlinked = s.items
 		.filter((x) => x.item.kind === 'saving' && x.item.assetId === null)
 		.reduce((a, x) => a + x.monthly.mine, 0);
-	return unlinked + Math.max(s.free, 0);
+	return Math.max(unlinked + s.free, 0);
 }
 
 export interface GoalStatus {
