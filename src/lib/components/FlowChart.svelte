@@ -68,7 +68,10 @@
 
 		// Every income feeds the middle in proportion; the right column hangs off spending and saving
 		const links: Link[] = [];
+		// Local scratch maps for this computation, not reactive state
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
 		const out = new Map<string, number>();
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
 		const into = new Map<string, number>();
 		const link = (from: Node, to: Node, value: number, color: string) => {
 			if (value <= 0) return;

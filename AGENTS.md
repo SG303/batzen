@@ -12,6 +12,7 @@ personal data; English for everything in the repo; talk to me in German.
 - Setup: `npm ci`
 - Dev server: `npm run dev -- --host 0.0.0.0`
 - Type check: `npm run check`
+- Lint: `npm run lint` (ESLint with the JS, TypeScript and Svelte recommended rules)
 - Unit and server tests: `npm test`
 - End-to-end tests: `npm run test:e2e` (Playwright, Chromium)
 - Release: `npm run release -- <major|minor|patch>` (see "Versioning" below)
@@ -50,5 +51,4 @@ personal data; English for everything in the repo; talk to me in German.
 
 ## Deviations from baseline
 
-- `tool-canon`: no ESLint yet; `svelte-check` (`npm run check`) is the only
-  static check. Adding ESLint is planned as a separate change.
+- none
