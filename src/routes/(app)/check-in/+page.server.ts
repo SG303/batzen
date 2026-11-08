@@ -13,7 +13,7 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const asOf = String(form.get('asOf') ?? '');
 		if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(asOf)) return fail(400, { error: 'Ungültiger Stichtag.' });
-		let changes: CheckInChange[] | null = null;
+		let changes: CheckInChange[] | null;
 		let contributions: Map<number, number> | null = null;
 		try {
 			changes = parseChanges(JSON.parse(String(form.get('changes') ?? '[]')));
