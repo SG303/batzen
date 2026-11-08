@@ -1,5 +1,6 @@
 # Weekly updates, grouped into one pull request per ecosystem. CI merges them automatically
 # once the tests and the image pass, except major versions (see .github/workflows/ci.yml).
+# The 7-day cooldown skips versions younger than a week; security updates are not delayed.
 version: 2
 updates:
   - package-ecosystem: npm
@@ -9,6 +10,8 @@ updates:
       day: sunday
       time: '22:00'
       timezone: Europe/Zurich
+    cooldown:
+      default-days: 7
     groups:
       npm:
         update-types: [minor, patch]
@@ -21,6 +24,8 @@ updates:
       day: sunday
       time: '22:00'
       timezone: Europe/Zurich
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: github-actions
     directory: /
@@ -29,6 +34,8 @@ updates:
       day: sunday
       time: '22:00'
       timezone: Europe/Zurich
+    cooldown:
+      default-days: 7
     groups:
       actions:
         update-types: [minor, patch]

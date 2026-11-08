@@ -105,3 +105,7 @@ docker compose start batzen
 ```
 
 **After an update that went wrong**: pin the previous image first (`BATZEN_TAG=sha-…` in `.env`, see [Deployment](#deployment)), otherwise the new version migrates the database again on start. Then restore the copy from before the update with the commands above, using `batzen-before-update-….db` instead of the nightly file.
+
+## License
+
+MIT, see [LICENSE](LICENSE).

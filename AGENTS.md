@@ -1,0 +1,54 @@
+# Batzen
+
+Personal macro budget app named Batzen (single user, self-hosted, German UI, CHF). See README.md for features. Runs behind Traefik in my home network. Public repo.
+
+Follows the SG303 baseline v1 (`sgstack/global/AGENTS.md`,
+`sgstack/baseline/tools.md`). If you cannot read those: work on a branch,
+open a PR, merge only with green checks (squash); never commit secrets or
+personal data; English for everything in the repo; talk to me in German.
+
+## Commands
+
+- Setup: `npm ci`
+- Dev server: `npm run dev -- --host 0.0.0.0`
+- Type check: `npm run check`
+- Unit and server tests: `npm test`
+- End-to-end tests: `npm run test:e2e` (Playwright, Chromium)
+- Release: `npm run release -- <major|minor|patch>` (see "Versioning" below)
+
+## Conventions
+
+- UI text is German (Swiss: "ss" instead of "ß", CHF formatted with `de-CH`, e.g. 1’240). Code, comments, commits: English.
+- Amounts are stored as integers in Rappen; months as `'YYYY-MM'` strings.
+- All budget math lives in `src/lib/domain.ts` (pure, shared client/server). Year figures are averages over the 12 months, so mid-year changes are weighted.
+- Costs, incomes and asset balances are timelines (`item_versions`, `income_versions`, `asset_versions`, unique per owner + month). Saving a version for an existing month replaces it. A balance carries forward until the next entry; an `ended` version closes the asset and drops it from the check-in.
+- Assets: pillar 3a and pension fund are tied up, everything else is freely available; only accounts (`account`) count as cash for the emergency fund (cash / monthly fixed + variable costs). See `ASSET_TYPES` in `src/lib/domain.ts`.
+- Item notes: `item_versions.note` (max `ITEM_NOTE_MAX`) is free text per version, so it follows the timeline (provider changes keep their history). Shown under the item in `/posten` and in the version history, not in the overview or the snapshot. The check-in does not ask for it: a new version written by the check-in inherits the note in effect, an existing version of that month keeps its own, an `ended` version has none.
+- Saving items can feed an asset (`items.asset_id`, saving items only, set null when the asset is deleted). The check-in asks for the contributions since the previous check-in for every linked, open asset that was part of that check-in (`contributionPrompts`), prefilled with the budget estimate. The confirmed amounts are stored only in the snapshot (`Snapshot.assets[].contributions` with the month of the previous check-in); market performance = balance change minus contributions (`checkInPerformance`). Contributions are never negative.
+- Due dates and reserves: item versions have an optional `dueMonth` (1–12, null for monthly; the other months follow the interval), items a `reserve` flag (default on). The monthly set-aside sums every reserved item that is not monthly, with or without due month (`reservePlan`); the calendar and the target balance (`reserveTarget`) need the due month. Like `counted`, `reserve` is a view setting and not part of the snapshot; the calendar is shown for the year, not for a check-in.
+- Planning (`/planen`): goals (`goals`) have a target, a due month and either an asset (progress = its balance) or an amount saved by hand. The pace is the saving items that feed the asset; otherwise the free saving (saving items without asset plus what is left over), which goals share in order of due month (`goalStatuses`). Market gains are not projected. Scenarios (`scenarios.changes`, JSON of `ScenarioChange`) change, scale, drop or add items and incomes of the current month's budget (`scenarioData`, `compareScenario`) and never write to the budget; at most one change per item or income. Changes to deleted or inactive entries are kept but have no effect.
+- Each check-in stores a frozen `Snapshot` (JSON in `check_ins.snapshot`) plus a free-text note. The overview shows a snapshot via `?jahr=YYYY&stand=<checkInId>` and compares it with the previous check-in. Check-ins without a snapshot are rebuilt from the history. `Snapshot.assets` is optional: snapshots from before assets existed have none. Whether an income counts (`income_sources.counted`) is treated as a view setting and always uses the current value.
+- Money is only ever rendered through `chf`, `chfExact` and `chfDelta` (`src/lib/money.ts`): they return `HIDDEN` in privacy mode (`src/lib/privacy.svelte.ts`, cookie `privacy`, set on the server in `hooks.server.ts` and applied in the root layout before anything renders). Never format amounts another way. Percentages stay visible.
+- The year review (`/verlauf/[jahr]`) is made for printing: the app layout hides header and navigation with `print:hidden`, and `app.css` forces the light palette in `@media print`.
+- Login: every route except `/anmelden` and `/einrichten` requires a session (checked in `src/hooks.server.ts`; static files bypass hooks). Auth logic lives in `src/lib/server/auth.ts` (scrypt hashes, sessions as SHA-256 of the cookie token, 30 days sliding). All users share one budget, there are no roles. Password checks (login, and the own password that changing the password and adding or deleting users require) go through the in-memory throttle `takeAttempt`: counted before the hash is checked, per client address and per username, because behind a reverse proxy every client has the proxy's address. `scripts/reset-password.js` duplicates the hash format; keep both in sync.
+- Security headers: the Content-Security-Policy is `csp` in `vite.config.ts` (scripts only with SvelteKit's nonce, inline styles allowed for style attributes); the other headers are `SECURITY_HEADERS` in `src/hooks.server.ts`.
+- Session cookies set `Secure` only when the form post's Origin is https, because the app also runs over plain http in the home network.
+- Backups: `src/lib/server/backup.ts` writes nightly `VACUUM INTO` copies to `BACKUP_DIR`, started from `init` in `src/hooks.server.ts`. JSON restore lives in `src/lib/server/restore.ts`; it must keep accepting every export format the app has ever produced (see the export route).
+- Release pipeline: `.github/workflows/ci.yml` checks, tests, builds and smoke-tests the image (healthy + `/einrichten` answers) and publishes `ghcr.io/sg303/batzen:latest` and `:sha-<commit>` from `main`, plus a weekly rebuild. Dependabot (`.github/dependabot.yml`) updates npm, the base image and actions; CI merges non-major updates itself. Deploying and updating the server is done by the user. Keep the Node version in the Dockerfile and `ci.yml` in sync. The repository is public: no personal data in code, tests, sample data or commits.
+- Versioning: Semantic Versioning, `package.json` `version` is the single source (injected at build as `__APP_VERSION__`, plus `__APP_COMMIT__` from the `COMMIT` build arg, shown in the footer of `(app)/+layout.svelte` via `src/lib/version.ts`). `CHANGELOG.md` follows Keep a Changelog, in English, written for users. **With every change:** a user-visible change (feature, behaviour, fix, security) adds a line under `## [Unreleased]`; refactoring, tests, CI and Dependabot updates do not. A feature or fix is released in its own pull request with `npm run release -- <major|minor|patch>` (`scripts/release.js`: moves Unreleased into a dated section, updates the links, bumps `package.json` and the lock file); commit the three files with the change. Feature = minor, fix = patch, incompatible change (export format, manual migration) = major; stay on 0.x until the user decides on 1.0.0. Never edit the version by hand, never reuse or move a tag. CI creates tag `v<version>`, the GitHub release (notes from the changelog) and the image tag `<version>` on the first build of a new version on `main`. `src/lib/version.test.ts` fails if package.json, the lock file and the changelog disagree.
+- Before migrations run on an existing database, `src/lib/server/db/pre-update.ts` copies it to `BACKUP_DIR` (`batzen-before-update-*.db`, newest 5 kept); startup fails if the copy fails.
+- Tests: `npm test` (Vitest, `*.test.ts` next to the code). Server tests get a fresh in-memory database per file (`DATABASE_PATH=:memory:` in `vite.config.ts`).
+- App pages live in the `(app)` route group (header, navigation, budget data); the login pages use `AuthShell.svelte` without navigation.
+- Category colours are a CVD-validated palette (`--cat-1..8` in `src/app.css`); keep the slot order when changing values.
+- Design: elegant minimalism, one accent (fir green) for "what is left" and primary actions. Use the frontend-design skill for UI work.
+
+## SvelteKit 3 specifics
+
+- Internal imports use the package.json `imports` alias with file extensions: `#lib/domain.ts`, `#lib/components/X.svelte`.
+- adapter-node has no `ORIGIN` env anymore and assumes https without a proxy header. The built-in CSRF check is disabled (`csrf.trustedOrigins: ['*']`) and replaced by a protocol-agnostic origin check in `src/hooks.server.ts`.
+- Tailwind may miss classes from files created while the dev server runs; restart `npm run dev` if new classes have no effect.
+
+## Deviations from baseline
+
+- `tool-canon`: no ESLint yet; `svelte-check` (`npm run check`) is the only
+  static check. Adding ESLint is planned as a separate change.
