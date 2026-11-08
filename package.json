@@ -29,7 +29,7 @@
 		"eslint-plugin-svelte": "^3.24.1",
 		"globals": "^17.14.0",
 		"svelte": "^5.57.1",
-		"svelte-check": "^4.6.0",
+		"svelte-check": "^4.7.8",
 		"tailwindcss": "^4.3.3",
 		"typescript": "^6.0.3",
 		"typescript-eslint": "^8.72.1",
