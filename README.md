@@ -4,6 +4,9 @@
 
 A personal, self-hosted budget app for the big picture. Instead of logging every transaction, you record recurring costs (rent, insurance, subscriptions, taxes), rough estimates for variable costs (groceries, train tickets) and your income. A short check-in a few times a year keeps the numbers current.
 
+> [!NOTE]
+> Personal project, built with AI coding agents under my supervision. Review the code carefully before you use it.
+
 - **Overview**: how your income splits into categories and what is left, per month or per year, as a band, a flow diagram (income → spending, saving, left over → categories and saving items) or a list. The saving rate is split into what you save on purpose (saving items) and what is simply left over
 - **Items**: every cost and income keeps a history ("from March 2025: 2'560.–"), so changes and past years stay comparable
 - **Shared costs**: record the total and your own share (e.g. rent split with a partner)
@@ -105,6 +108,12 @@ docker compose start batzen
 ```
 
 **After an update that went wrong**: pin the previous image first (`BATZEN_TAG=sha-…` in `.env`, see [Deployment](#deployment)), otherwise the new version migrates the database again on start. Then restore the copy from before the update with the commands above, using `batzen-before-update-….db` instead of the nightly file.
+
+## Status
+
+Personal project, built with AI coding agents under my supervision. There is
+no support and no stability guarantee; review the code carefully before you
+rely on it. See [LICENSE](LICENSE) for the warranty terms.
 
 ## License
 

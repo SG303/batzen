@@ -2,7 +2,7 @@
 
 Personal macro budget app named Batzen (single user, self-hosted, German UI, CHF). See README.md for features. Runs behind Traefik in my home network. Public repo.
 
-Follows the SG303 baseline v1 (`sgstack/global/AGENTS.md`,
+Follows the SG303 baseline v2 (`sgstack/global/AGENTS.md`,
 `sgstack/baseline/tools.md`). If you cannot read those: work on a branch,
 open a PR, merge only with green checks (squash); never commit secrets or
 personal data; English for everything in the repo; talk to me in German.
