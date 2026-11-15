@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { bumpVersion, releaseChangelog, sectionNotes } from '../../scripts/release.js';
+import { bumpVersion, pinComposeImage, releaseChangelog, sectionNotes } from '../../scripts/release.js';
 
 const read = (path: string) => readFileSync(new URL(`../../${path}`, import.meta.url), 'utf8');
 
@@ -59,6 +59,17 @@ describe('changelog', () => {
 	});
 });
 
+describe('pinComposeImage', () => {
+	it('replaces the default image tag', () => {
+		const compose = '    image: ghcr.io/sg303/batzen:${BATZEN_TAG:-0.1.0}\n';
+		expect(pinComposeImage(compose, '0.2.0')).toBe('    image: ghcr.io/sg303/batzen:${BATZEN_TAG:-0.2.0}\n');
+	});
+
+	it('refuses a compose file without the tag variable', () => {
+		expect(() => pinComposeImage('image: ghcr.io/sg303/batzen:latest\n', '0.2.0')).toThrow();
+	});
+});
+
 describe('repository version', () => {
 	const { version } = JSON.parse(read('package.json'));
 
@@ -70,6 +81,10 @@ describe('repository version', () => {
 		const lock = JSON.parse(read('package-lock.json'));
 		expect(lock.version).toBe(version);
 		expect(lock.packages[''].version).toBe(version);
+	});
+
+	it('is the default image tag in compose.yaml', () => {
+		expect(read('compose.yaml')).toContain(`ghcr.io/sg303/batzen:\${BATZEN_TAG:-${version}}`);
 	});
 
 	it('has an entry in CHANGELOG.md', () => {

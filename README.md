@@ -54,7 +54,7 @@ Every change to `main` is tested and published as a Docker image to `ghcr.io/sg3
 docker compose pull && docker compose up -d   # serves on port 3000, data in the volume "batzen-data"
 ```
 
-To update, run the same command again (or let a tool such as a nightly cron job do it). To go back to an earlier version, put e.g. `BATZEN_TAG=0.1.0` (or `sha-1a2b3c4`) into a file `.env` next to `compose.yaml` and run `docker compose up -d`; remove the line to follow `latest` again. Before an update changes the database, the app writes a copy to `/backups/batzen-before-update-<date>T<time>.db` and keeps the newest 5 (see [Restore](#restore)).
+`compose.yaml` runs the release it belongs to, so the server stays on that version until you change it. To update, put the new version, e.g. `BATZEN_TAG=0.3.0`, into a file `.env` next to `compose.yaml` (or copy the current `compose.yaml`) and run the same command again. The same way, `BATZEN_TAG=0.1.0` (or `sha-1a2b3c4`) goes back to an earlier version, and `BATZEN_TAG=latest` follows every change to `main`. Before an update changes the database, the app writes a copy to `/backups/batzen-before-update-<date>T<time>.db` and keeps the newest 5 (see [Restore](#restore)).
 
 To build the image from a checkout instead: `docker compose -f compose.yaml -f compose.build.yaml up -d --build`.
 
@@ -74,9 +74,9 @@ Batzen follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and ke
 - `package.json` is the single source of truth for the version. Version 0.x means the app is still evolving; bump to 1.0.0 once the data format and the export are considered stable.
 - **MAJOR**: incompatible change (e.g. an export format that older versions cannot read, a manual migration step). **MINOR**: new feature. **PATCH**: bug fix or small improvement.
 - Every user-visible change adds a line under `## [Unreleased]` in `CHANGELOG.md` (`Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`), written for users. Refactoring, tests, CI and automatic dependency updates stay out.
-- To release, run `npm run release -- <major|minor|patch>`. It moves `[Unreleased]` into a dated section, updates the compare links and bumps `package.json` and `package-lock.json`. Commit the three files in the pull request that contains the change.
+- To release, run `npm run release -- <major|minor|patch>`. It moves `[Unreleased]` into a dated section, updates the compare links and bumps `package.json` and `package-lock.json` and sets the new version as the default image tag in `compose.yaml`. Commit the four files in the pull request that contains the change.
 - When that pull request reaches `main`, CI publishes the image as `ghcr.io/sg303/batzen:<version>` (next to `latest` and `sha-<commit>`), creates the git tag `v<version>` and a GitHub release with the changelog section as notes. A version is released once; later builds never move its tag.
-- A test fails if `package.json`, `package-lock.json` and `CHANGELOG.md` disagree about the current version.
+- A test fails if `package.json`, `package-lock.json`, `CHANGELOG.md` and `compose.yaml` disagree about the current version.
 
 ## Automation
 

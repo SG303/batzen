@@ -1,6 +1,7 @@
 // Release helper for the version in package.json and CHANGELOG.md.
 // Usage:
-//   node scripts/release.js <major|minor|patch>   moves [Unreleased] into a dated release and bumps the version
+//   node scripts/release.js <major|minor|patch>   moves [Unreleased] into a dated release, bumps the version
+//                                                 and pins it as the default image tag in compose.yaml
 //   node scripts/release.js notes [version]       prints the changelog section of a version (default: package.json)
 // See "Versioning" in README.md.
 import { execFileSync } from 'node:child_process';
@@ -64,6 +65,18 @@ export function releaseChangelog(changelog, version, date) {
 		.replace(/^\[Unreleased\]: .*\n/m, `${refs.join('\n')}\n`);
 }
 
+const COMPOSE_TAG = /\$\{BATZEN_TAG:-[^}]*\}/;
+
+/**
+ * Sets the default image tag in compose.yaml to `version`.
+ * @param {string} compose
+ * @param {string} version
+ */
+export function pinComposeImage(compose, version) {
+	if (!COMPOSE_TAG.test(compose)) throw new Error('compose.yaml has no ${BATZEN_TAG:-…} image tag');
+	return compose.replace(COMPOSE_TAG, `\${BATZEN_TAG:-${version}}`);
+}
+
 /** @param {string} path relative to the repository root */
 const read = (path) => readFileSync(new URL(path, root), 'utf8');
 
@@ -81,12 +94,13 @@ function main() {
 	const version = bumpVersion(pkg.version, command);
 	const date = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Zurich' });
 	writeFileSync(new URL('CHANGELOG.md', root), releaseChangelog(read('CHANGELOG.md'), version, date));
+	writeFileSync(new URL('compose.yaml', root), pinComposeImage(read('compose.yaml'), version));
 	// Updates package.json and package-lock.json together, without a commit or tag
 	execFileSync('npm', ['version', version, '--no-git-tag-version'], {
 		cwd: fileURLToPath(root),
 		stdio: 'inherit'
 	});
-	console.log(`Released ${version}. Commit CHANGELOG.md, package.json and package-lock.json.`);
+	console.log(`Released ${version}. Commit CHANGELOG.md, compose.yaml, package.json and package-lock.json.`);
 }
 
 if (argv[1] && import.meta.url === pathToFileURL(argv[1]).href) {

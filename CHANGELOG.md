@@ -4,6 +4,12 @@ All notable changes to Batzen are listed here. The format follows [Keep a Change
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-11-15
+
+### Changed
+
+- `compose.yaml` now runs the release it belongs to instead of `latest`, so updates on the server only happen when you set a new version (`BATZEN_TAG` in `.env`). Set `BATZEN_TAG=latest` to keep following every change.
+
 ## [0.2.3] - 2026-11-03
 
 ### Fixed
@@ -49,7 +55,8 @@ First versioned release. The app already covered:
 - Privacy mode, light and dark theme
 - The current version at the bottom of every page
 
-[Unreleased]: https://github.com/SG303/batzen/compare/v0.2.3...HEAD
+[Unreleased]: https://github.com/SG303/batzen/compare/v0.2.4...HEAD
+[0.2.4]: https://github.com/SG303/batzen/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/SG303/batzen/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/SG303/batzen/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/SG303/batzen/compare/v0.2.0...v0.2.1
