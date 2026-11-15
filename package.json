@@ -18,11 +18,11 @@
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
-		"@playwright/test": "^1.64.1",
+		"@playwright/test": "^1.65.0",
 		"@sveltejs/adapter-node": "^6.0.1",
 		"@sveltejs/kit": "^3.1.1",
 		"@sveltejs/vite-plugin-svelte": "^7.2.0",
-		"@tailwindcss/vite": "^4.3.3",
+		"@tailwindcss/vite": "^4.3.5",
 		"@types/better-sqlite3": "^9.6.0",
 		"drizzle-kit": "^0.31.11",
 		"eslint": "^10.14.0",
@@ -33,8 +33,8 @@
 		"tailwindcss": "^4.3.3",
 		"typescript": "^6.0.3",
 		"typescript-eslint": "^8.72.1",
-		"vite": "^8.3.0",
-		"vitest": "^5.0.5"
+		"vite": "^8.3.6",
+		"vitest": "^5.1.0"
 	},
 	"imports": {
 		"#lib": "./src/lib/index.js",
@@ -42,7 +42,7 @@
 	},
 	"dependencies": {
 		"@fontsource-variable/instrument-sans": "^5.3.0",
-		"@lucide/svelte": "^1.66.0",
+		"@lucide/svelte": "^1.70.0",
 		"better-sqlite3": "^13.0.3",
 		"drizzle-orm": "^0.45.4"
 	},
