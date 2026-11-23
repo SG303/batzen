@@ -1,5 +1,6 @@
-# Weekly updates, grouped into one pull request per ecosystem. CI merges them automatically
-# once the tests and the image pass, except major versions (see .github/workflows/ci.yml).
+# Dependabot config (baseline v2). Weekly updates, grouped into one pull request per
+# ecosystem. CI merges minor and patch updates automatically once the tests and the image
+# pass (see .github/workflows/ci.yml); majors and updates of unknown type stay open.
 # The 7-day cooldown skips versions younger than a week; security updates are not delayed.
 version: 2
 updates:
